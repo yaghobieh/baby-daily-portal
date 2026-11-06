@@ -1,0 +1,11 @@
+export const EMPTY_STRING = '';
+export const SPACE_STRING = ' ';
+export const COMMA_STRING = ',';
+export const COLON_STRING = ':';
+export const DASH_STRING = '-';
+export const UNDERSCORE_STRING = '_';
+export const SLASH_STRING = '/';
+export const DOT_STRING = '.';
+export const QUESTION_MARK_STRING = '?';
+export const EXCLAMATION_MARK_STRING = '!';
+export const NEWLINE_STRING = '\n';

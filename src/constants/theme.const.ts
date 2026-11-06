@@ -1,0 +1,10 @@
+export const COLOR_WARM_CORAL = '#FF7A7A';
+export const COLOR_SOFT_MINT = '#48C78E';
+export const COLOR_LAVENDER = '#8C7AE6';
+export const COLOR_SUNNY_AMBER = '#FFAA00';
+export const COLOR_SKY_BLUE = '#3897F0';
+export const COLOR_CREAM_BG = '#FFFDFB';
+export const COLOR_DARK_TEXT = '#2D3142';
+export const COLOR_MUTED_TEXT = '#71788E';
+export const COLOR_BORDER = '#F0EBE6';
+export const COLOR_WHITE = '#FFFFFF';
