@@ -5,19 +5,10 @@ import {
   INITIAL_CHAT_STATE,
   ROLE_ASSISTANT,
   ROLE_USER,
-  type ChatMessage,
-  type ChatState,
+  DEFAULT_AI_ERROR_MESSAGE,
 } from './chat.consts';
+import type { ChatStoreState } from './chat.types';
 import { createChatMessage } from './chat.utils';
-
-export interface ChatStoreState extends ChatState {
-  toggleOpen: () => void;
-  openChat: () => void;
-  closeChat: () => void;
-  setInputMessage: (text: string) => void;
-  sendMessage: (customText?: string) => Promise<void>;
-  clearChat: () => void;
-}
 
 export const chatNucleus = createNucleus<ChatStoreState>((set, get) => ({
   ...INITIAL_CHAT_STATE,
@@ -29,36 +20,38 @@ export const chatNucleus = createNucleus<ChatStoreState>((set, get) => ({
   setInputMessage: (inputMessage: string) => set({ inputMessage }),
 
   sendMessage: async (customText?: string) => {
-    const state = get();
-    const textToSend = (customText ?? state.inputMessage).trim();
-    if (!textToSend || state.isLoading) return;
+    const text = (customText ?? get().inputMessage).trim();
+    if (!text || get().isLoading) return;
 
-    const userMsg = createChatMessage(ROLE_USER, textToSend);
-    const updatedMessages = [...state.messages, userMsg];
+    const userMsg = createChatMessage(ROLE_USER, text);
+    const updatedMessages = [...get().messages, userMsg];
 
-    set({
+    const pendingChatState = {
       messages: updatedMessages,
       inputMessage: EMPTY_STRING,
       isLoading: true,
       error: null,
-    });
+    };
+    set(pendingChatState);
 
     try {
-      const aiReplyText = await sendDeepSeekMessage(state.messages, textToSend);
-      const aiMsg = createChatMessage(ROLE_ASSISTANT, aiReplyText);
-      set((prev) => ({
-        messages: [...prev.messages, aiMsg],
+      const reply = await sendDeepSeekMessage(updatedMessages, text);
+      const assistantMsg = createChatMessage(ROLE_ASSISTANT, reply);
+
+      set((state) => ({
+        messages: [...state.messages, assistantMsg],
         isLoading: false,
       }));
     } catch (err: unknown) {
       const errorMessage =
-        err instanceof Error ? err.message : 'Failed to connect to BabyDaily AI.';
+        err instanceof Error ? err.message : DEFAULT_AI_ERROR_MESSAGE;
       const fallbackMsg = createChatMessage(
         ROLE_ASSISTANT,
-        `Sorry, I encountered a temporary connection issue. You can still reach our team at yaghobieh@gmail.com!`
+        `⚠️ ${errorMessage}. Please check network or retry shortly.`
       );
-      set((prev) => ({
-        messages: [...prev.messages, fallbackMsg],
+
+      set((state) => ({
+        messages: [...state.messages, fallbackMsg],
         isLoading: false,
         error: errorMessage,
       }));

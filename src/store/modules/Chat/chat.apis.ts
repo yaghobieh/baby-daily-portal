@@ -4,16 +4,12 @@ import {
   DEEPSEEK_MODEL,
   DEEPSEEK_SYSTEM_PROMPT,
 } from '@constants/api.const';
-import type { ChatMessage } from './chat.consts';
-
-export interface DeepSeekChatResponse {
-  choices: Array<{
-    message: {
-      role: string;
-      content: string;
-    };
-  }>;
-}
+import {
+  CHAT_API_TEMPERATURE,
+  CHAT_API_MAX_TOKENS,
+  NUMBER_TEN,
+} from '@constants/numbers.const';
+import type { ChatMessage, DeepSeekChatResponse } from './chat.types';
 
 export const sendDeepSeekMessage = async (
   conversationHistory: ChatMessage[],
@@ -21,7 +17,7 @@ export const sendDeepSeekMessage = async (
 ): Promise<string> => {
   const messages = [
     { role: 'system', content: DEEPSEEK_SYSTEM_PROMPT },
-    ...conversationHistory.slice(-10).map((m) => ({
+    ...conversationHistory.slice(-NUMBER_TEN).map((m) => ({
       role: m.role,
       content: m.content,
     })),
@@ -37,21 +33,22 @@ export const sendDeepSeekMessage = async (
     body: JSON.stringify({
       model: DEEPSEEK_MODEL,
       messages,
-      temperature: 0.7,
-      max_tokens: 500,
+      temperature: CHAT_API_TEMPERATURE,
+      max_tokens: CHAT_API_MAX_TOKENS,
     }),
   });
 
   if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`DeepSeek API error (${response.status}): ${errorText}`);
+    const errorBody = await response.text();
+    throw new Error(`API Error (${response.status}): ${errorBody}`);
   }
 
-  const data: DeepSeekChatResponse = await response.json();
-  const reply = data.choices?.[0]?.message?.content;
-  if (!reply) {
-    throw new Error('No response returned from BabyDaily AI.');
+  const data = (await response.json()) as DeepSeekChatResponse;
+  const replyContent = data.choices?.[0]?.message?.content;
+
+  if (!replyContent) {
+    throw new Error('No response returned by DeepSeek API');
   }
 
-  return reply;
+  return replyContent;
 };

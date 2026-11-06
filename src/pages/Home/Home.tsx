@@ -1,70 +1,77 @@
 import type { FC } from 'react';
+import { Typography, Badge, Button, Card, Flex } from '@forgedevstack/bear';
 import {
-  HERO_TITLE,
-  HERO_SUBTITLE,
-  FEATURES_LIST,
-  STATS_LIST,
-} from './Home.consts';
+  ClockIcon,
+  UsersIcon,
+  CheckCircleIcon,
+  ChevronRightIcon,
+  BearIcon,
+} from '@forgedevstack/bear-icons';
+import { useLingo } from '@forgedevstack/lingo';
+import { FEATURES_LIST, ICON_MAP } from './Home.consts';
 import type { HomeProps } from './Home.types';
 import { StoreButtons } from '@components/StoreButtons';
-import {
-  Clock,
-  Heart,
-  Users,
-  ShieldCheck,
-  Moon,
-  Sparkles,
-  ChevronRight,
-  Baby,
-  Utensils,
-  BellRing,
-} from 'lucide-react';
-
-const ICON_MAP = {
-  feed: Utensils,
-  sleep: Moon,
-  alarm: BellRing,
-  diaper: Baby,
-  sharing: Users,
-  shield: ShieldCheck,
-};
 
 export const Home: FC<HomeProps> = ({ onOpenChat }) => {
+  const { t } = useLingo();
+
   return (
     <div className="space-y-24">
-      {/* Hero Section */}
       <section className="relative pt-12 pb-6 px-4 sm:px-6 max-w-6xl mx-auto text-center md:text-left">
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12 items-center">
           <div className="md:col-span-7 space-y-6">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FFF0F0] border border-[#FFE0E0] text-[#FF7A7A] text-xs font-bold tracking-wide">
-              <Sparkles className="w-3.5 h-3.5 text-[#FF7A7A]" />
-              <span>Designed with love for modern parents & caregivers</span>
-            </div>
+            <Flex
+              align="center"
+              gap={2}
+              className="px-3.5 py-1.5 rounded-full bg-[#FFF0F0] border border-[#FFE0E0] text-[#FF7A7A] text-xs font-bold tracking-wide w-fit mx-auto md:mx-0"
+            >
+              <BearIcon className="w-3.5 h-3.5 text-[#FF7A7A]" />
+              <Typography variant="caption" className="font-bold text-[#FF7A7A]">
+                {t('hero.badge')}
+              </Typography>
+            </Flex>
 
-            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#2D3142] tracking-tight leading-[1.12]">
-              {HERO_TITLE}
-            </h1>
+            <Typography
+              variant="h1"
+              className="text-4xl sm:text-5xl lg:text-6xl font-black text-[#2D3142] tracking-tight leading-[1.12]"
+            >
+              {t('hero.title')}
+            </Typography>
 
-            <p className="text-base sm:text-lg text-[#71788E] max-w-xl leading-relaxed">
-              {HERO_SUBTITLE}
-            </p>
+            <Typography
+              variant="body1"
+              className="text-base sm:text-lg text-[#71788E] max-w-xl leading-relaxed"
+            >
+              {t('hero.subtitle')}
+            </Typography>
 
             <StoreButtons />
 
-            <div className="flex flex-wrap items-center gap-6 pt-4 text-xs font-medium text-[#71788E]">
-              <div className="flex items-center gap-2">
-                <Clock className="w-4 h-4 text-[#FFAA00]" />
-                <span>Next Meal Clock Alarms</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Users className="w-4 h-4 text-[#3897F0]" />
-                <span>Multi-Parent Live Sync</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <ShieldCheck className="w-4 h-4 text-[#48C78E]" />
-                <span>100% Ad-Free & Private</span>
-              </div>
-            </div>
+            <Flex
+              wrap="wrap"
+              align="center"
+              gap={6}
+              className="pt-4 text-xs font-medium text-[#71788E] justify-center md:justify-start"
+            >
+              <Flex align="center" gap={2}>
+                <ClockIcon className="w-4 h-4 text-[#FFAA00]" />
+                <Typography variant="caption" className="font-semibold text-[#71788E]">
+                  {t('hero.pills.clock')}
+                </Typography>
+              </Flex>
+              <Flex align="center" gap={2}>
+                <UsersIcon className="w-4 h-4 text-[#3897F0]" />
+                <Typography variant="caption" className="font-semibold text-[#71788E]">
+                  {t('hero.pills.sync')}
+                </Typography>
+              </Flex>
+              <Flex align="center" gap={2}>
+                <CheckCircleIcon className="w-4 h-4 text-[#48C78E]" />
+                <Typography variant="caption" className="font-semibold text-[#71788E]">
+                  {t('hero.pills.privacy')}
+                </Typography>
+              </Flex>
+            </Flex>
           </div>
 
           <div className="md:col-span-5 flex justify-center relative">
@@ -79,8 +86,12 @@ export const Home: FC<HomeProps> = ({ onOpenChat }) => {
                   ✓
                 </div>
                 <div className="text-left">
-                  <div className="text-xs font-bold text-[#2D3142]">Liam Woke Up</div>
-                  <div className="text-[11px] text-[#71788E]">Slept 1h 45m • Woken 12:45</div>
+                  <Typography variant="body2" className="font-bold text-[#2D3142]">
+                    {t('hero.babyStatus.name')}
+                  </Typography>
+                  <Typography variant="caption" className="text-[11px] text-[#71788E]">
+                    {t('hero.babyStatus.desc')}
+                  </Typography>
                 </div>
               </div>
             </div>
@@ -88,38 +99,67 @@ export const Home: FC<HomeProps> = ({ onOpenChat }) => {
         </div>
       </section>
 
-      {/* Stats Counter Bar */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 sm:p-8 rounded-3xl bg-white border border-[#F0EBE6] shadow-sm">
-          {STATS_LIST.map((stat, idx) => (
-            <div key={idx} className="text-center p-2">
-              <div className="text-2xl sm:text-3xl font-extrabold text-[#2D3142] tracking-tight">
-                {stat.value}
-              </div>
-              <div className="text-xs text-[#71788E] mt-1 font-medium">{stat.label}</div>
-            </div>
-          ))}
-        </div>
+        <Card
+          variant="outlined"
+          radius="2xl"
+          className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 sm:p-8 bg-white border-[#F0EBE6] shadow-sm"
+        >
+          <div className="text-center p-2">
+            <Typography variant="h3" className="text-2xl sm:text-3xl font-extrabold text-[#2D3142] tracking-tight">
+              {t('stats.languages.value')}
+            </Typography>
+            <Typography variant="caption" className="text-xs text-[#71788E] mt-1 font-medium">
+              {t('stats.languages.label')}
+            </Typography>
+          </div>
+          <div className="text-center p-2">
+            <Typography variant="h3" className="text-2xl sm:text-3xl font-extrabold text-[#2D3142] tracking-tight">
+              {t('stats.free.value')}
+            </Typography>
+            <Typography variant="caption" className="text-xs text-[#71788E] mt-1 font-medium">
+              {t('stats.free.label')}
+            </Typography>
+          </div>
+          <div className="text-center p-2">
+            <Typography variant="h3" className="text-2xl sm:text-3xl font-extrabold text-[#2D3142] tracking-tight">
+              {t('stats.speed.value')}
+            </Typography>
+            <Typography variant="caption" className="text-xs text-[#71788E] mt-1 font-medium">
+              {t('stats.speed.label')}
+            </Typography>
+          </div>
+          <div className="text-center p-2">
+            <Typography variant="h3" className="text-2xl sm:text-3xl font-extrabold text-[#2D3142] tracking-tight">
+              {t('stats.sync.value')}
+            </Typography>
+            <Typography variant="caption" className="text-xs text-[#71788E] mt-1 font-medium">
+              {t('stats.sync.label')}
+            </Typography>
+          </div>
+        </Card>
       </section>
 
-      {/* Feature Highlights Grid */}
       <section id="features" className="max-w-6xl mx-auto px-4 sm:px-6 space-y-12">
         <div className="text-center max-w-2xl mx-auto space-y-3">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#2D3142] tracking-tight">
-            Everything your baby needs, without the noise
-          </h2>
-          <p className="text-sm sm:text-base text-[#71788E]">
-            Built with pediatric guidelines, soft pastel aesthetics, and instant actions to keep your focus on your little one.
-          </p>
+          <Typography variant="h2" className="text-3xl sm:text-4xl font-extrabold text-[#2D3142] tracking-tight">
+            {t('features.heading')}
+          </Typography>
+          <Typography variant="body1" className="text-sm sm:text-base text-[#71788E]">
+            {t('features.subheading')}
+          </Typography>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {FEATURES_LIST.map((feat) => {
             const IconComponent = ICON_MAP[feat.iconName];
             return (
-              <div
+              <Card
                 key={feat.id}
-                className="group p-7 rounded-3xl bg-white border border-[#F0EBE6] hover:border-[#FF7A7A]/40 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
+                variant="outlined"
+                radius="2xl"
+                interactive
+                className="group p-7 bg-white border-[#F0EBE6] hover:border-[#FF7A7A]/40 shadow-xs hover:shadow-xl transition-all duration-300 flex flex-col justify-between"
               >
                 <div className="space-y-4">
                   <div className="flex items-center justify-between">
@@ -129,121 +169,143 @@ export const Home: FC<HomeProps> = ({ onOpenChat }) => {
                     >
                       <IconComponent className="w-6 h-6" />
                     </div>
-                    <span className="text-[11px] font-bold px-2.5 py-1 rounded-full bg-[#FBF7F2] text-[#71788E]">
-                      {feat.badge}
-                    </span>
+                    <Badge variant="neutral" pill size="sm" className="font-bold text-[11px] bg-[#FBF7F2] text-[#71788E]">
+                      {t(`features.${feat.translationKey}.badge`)}
+                    </Badge>
                   </div>
 
-                  <h3 className="text-xl font-bold text-[#2D3142] group-hover:text-[#FF7A7A] transition-colors">
-                    {feat.title}
-                  </h3>
+                  <Typography variant="h4" className="text-xl font-bold text-[#2D3142] group-hover:text-[#FF7A7A] transition-colors">
+                    {t(`features.${feat.translationKey}.title`)}
+                  </Typography>
 
-                  <p className="text-sm text-[#71788E] leading-relaxed">
-                    {feat.description}
-                  </p>
+                  <Typography variant="body2" className="text-sm text-[#71788E] leading-relaxed">
+                    {t(`features.${feat.translationKey}.desc`)}
+                  </Typography>
                 </div>
-              </div>
+              </Card>
             );
           })}
         </div>
       </section>
 
-      {/* App Screenshots Showcase */}
       <section id="preview" className="max-w-6xl mx-auto px-4 sm:px-6 space-y-8">
         <div className="text-center max-w-xl mx-auto space-y-3">
-          <h2 className="text-3xl sm:text-4xl font-extrabold text-[#2D3142] tracking-tight">
-            Simple, Intuitive & Calming
-          </h2>
-          <p className="text-sm text-[#71788E]">
-            Designed to be easy to use with one hand at 3:00 AM.
-          </p>
+          <Typography variant="h2" className="text-3xl sm:text-4xl font-extrabold text-[#2D3142] tracking-tight">
+            {t('preview.heading')}
+          </Typography>
+          <Typography variant="body1" className="text-sm text-[#71788E]">
+            {t('preview.subheading')}
+          </Typography>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 pt-4">
-          <div className="rounded-3xl overflow-hidden bg-white border border-[#F0EBE6] shadow-md hover:shadow-xl transition-shadow p-3">
+          <Card variant="outlined" radius="2xl" className="overflow-hidden bg-white border-[#F0EBE6] shadow-md hover:shadow-xl transition-shadow p-3">
             <img
               src="/assets/01_daily_overview.png"
               alt="Daily Timeline"
               className="w-full h-auto rounded-2xl"
             />
             <div className="p-3 text-center">
-              <div className="font-bold text-sm text-[#2D3142]">Daily Timeline</div>
-              <div className="text-xs text-[#71788E]">Swipe-to-delete entries</div>
+              <Typography variant="h6" className="font-bold text-sm text-[#2D3142]">
+                {t('preview.screen1.title')}
+              </Typography>
+              <Typography variant="caption" className="text-xs text-[#71788E]">
+                {t('preview.screen1.subtitle')}
+              </Typography>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-3xl overflow-hidden bg-white border border-[#F0EBE6] shadow-md hover:shadow-xl transition-shadow p-3">
+          <Card variant="outlined" radius="2xl" className="overflow-hidden bg-white border-[#F0EBE6] shadow-md hover:shadow-xl transition-shadow p-3">
             <img
               src="/assets/02_feeding_tracker.png"
               alt="Feeding Tracker"
               className="w-full h-auto rounded-2xl"
             />
             <div className="p-3 text-center">
-              <div className="font-bold text-sm text-[#2D3142]">Feeding & Bottles</div>
-              <div className="text-xs text-[#71788E]">Breast timer & volumes</div>
+              <Typography variant="h6" className="font-bold text-sm text-[#2D3142]">
+                {t('preview.screen2.title')}
+              </Typography>
+              <Typography variant="caption" className="text-xs text-[#71788E]">
+                {t('preview.screen2.subtitle')}
+              </Typography>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-3xl overflow-hidden bg-white border border-[#F0EBE6] shadow-md hover:shadow-xl transition-shadow p-3">
+          <Card variant="outlined" radius="2xl" className="overflow-hidden bg-white border-[#F0EBE6] shadow-md hover:shadow-xl transition-shadow p-3">
             <img
               src="/assets/03_sleep_and_diaper.png"
               alt="Sleep & Diapers"
               className="w-full h-auto rounded-2xl"
             />
             <div className="p-3 text-center">
-              <div className="font-bold text-sm text-[#2D3142]">Sleep & Diapers</div>
-              <div className="text-xs text-[#71788E]">Real-time sleep ticker</div>
+              <Typography variant="h6" className="font-bold text-sm text-[#2D3142]">
+                {t('preview.screen3.title')}
+              </Typography>
+              <Typography variant="caption" className="text-xs text-[#71788E]">
+                {t('preview.screen3.subtitle')}
+              </Typography>
             </div>
-          </div>
+          </Card>
 
-          <div className="rounded-3xl overflow-hidden bg-white border border-[#F0EBE6] shadow-md hover:shadow-xl transition-shadow p-3">
+          <Card variant="outlined" radius="2xl" className="overflow-hidden bg-white border-[#F0EBE6] shadow-md hover:shadow-xl transition-shadow p-3">
             <img
               src="/assets/04_family_sharing.png"
               alt="Caregiver Sharing"
               className="w-full h-auto rounded-2xl"
             />
             <div className="p-3 text-center">
-              <div className="font-bold text-sm text-[#2D3142]">Caregiver Sharing</div>
-              <div className="text-xs text-[#71788E]">Direct email invites</div>
+              <Typography variant="h6" className="font-bold text-sm text-[#2D3142]">
+                {t('preview.screen4.title')}
+              </Typography>
+              <Typography variant="caption" className="text-xs text-[#71788E]">
+                {t('preview.screen4.subtitle')}
+              </Typography>
             </div>
-          </div>
+          </Card>
         </div>
       </section>
 
-      {/* AI Assistant Banner */}
       <section className="max-w-6xl mx-auto px-4 sm:px-6">
         <div className="p-8 sm:p-12 rounded-3xl bg-gradient-to-r from-[#FFF0F0] via-[#F5F3FC] to-[#EEF6FD] border border-[#F0EBE6] shadow-sm flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="space-y-3 text-center md:text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white text-[#8C7AE6] text-xs font-bold shadow-2xs">
-              <Sparkles className="w-3.5 h-3.5 text-[#8C7AE6]" />
-              <span>BabyDaily AI Guide (DeepSeek)</span>
-            </div>
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-[#2D3142]">
-              Have questions about routine tracking or alarms?
-            </h3>
-            <p className="text-sm text-[#71788E] max-w-lg leading-relaxed">
-              Ask our intelligent AI assistant about how to set phone clock alarms for feedings, invite family members, or manage baby routines.
-            </p>
+            <Flex
+              align="center"
+              gap={2}
+              className="px-3 py-1 rounded-full bg-white text-[#8C7AE6] text-xs font-bold shadow-2xs w-fit mx-auto md:mx-0"
+            >
+              <BearIcon className="w-3.5 h-3.5 text-[#8C7AE6]" />
+              <Typography variant="caption" className="font-bold text-[#8C7AE6]">
+                {t('aiBanner.badge')}
+              </Typography>
+            </Flex>
+            <Typography variant="h3" className="text-2xl sm:text-3xl font-extrabold text-[#2D3142]">
+              {t('aiBanner.title')}
+            </Typography>
+            <Typography variant="body1" className="text-sm text-[#71788E] max-w-lg leading-relaxed">
+              {t('aiBanner.desc')}
+            </Typography>
           </div>
 
-          <button
+          <Button
+            variant="babyCoral"
+            size="lg"
+            radius="pill"
             onClick={onOpenChat}
-            className="px-7 py-4 rounded-2xl bg-[#FF7A7A] hover:bg-[#E86262] text-white font-bold text-sm shadow-xl shadow-coral-500/20 hover:scale-105 transition-all flex items-center gap-2 shrink-0"
+            rightIcon={<ChevronRightIcon className="w-4 h-4" />}
+            className="px-7 py-4 shadow-xl shadow-coral-500/20 hover:scale-105 transition-all shrink-0 font-bold"
           >
-            <span>Ask BabyDaily AI</span>
-            <ChevronRight className="w-4 h-4" />
-          </button>
+            {t('aiBanner.button')}
+          </Button>
         </div>
       </section>
 
-      {/* Final Call to Action */}
       <section className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-6">
-        <h2 className="text-3xl sm:text-4xl font-extrabold text-[#2D3142] tracking-tight">
-          Ready for calmer, simpler days?
-        </h2>
-        <p className="text-sm sm:text-base text-[#71788E] max-w-xl mx-auto">
-          Download BabyDaily today. Track routine milestones with zero stress and real-time family peace of mind.
-        </p>
+        <Typography variant="h2" className="text-3xl sm:text-4xl font-extrabold text-[#2D3142] tracking-tight">
+          {t('cta.title')}
+        </Typography>
+        <Typography variant="body1" className="text-sm sm:text-base text-[#71788E] max-w-xl mx-auto">
+          {t('cta.subtitle')}
+        </Typography>
         <div className="flex justify-center">
           <StoreButtons />
         </div>

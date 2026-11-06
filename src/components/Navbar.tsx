@@ -1,70 +1,148 @@
-import type { FC } from 'react';
+import { useState, type FC } from 'react';
+import { Link } from 'react-router-dom';
+import { Typography, Badge } from '@forgedevstack/bear';
+import { useLingo } from '@forgedevstack/lingo';
 import { APP_NAME, BADGE_LIVE_NOW } from '@constants/strings.const';
-import { URL_GOOGLE_PLAY, ROUTE_HOME, ROUTE_PRIVACY } from '@constants/routes.const';
-import { MessageCircleHeart, Sparkles } from 'lucide-react';
+import {
+  URL_GOOGLE_PLAY,
+  ROUTE_HOME,
+  ROUTE_DOCS,
+  ROUTE_CHANGELOG,
+  ROUTE_PRIVACY,
+} from '@constants/routes.const';
+import { Sparkles, Globe, ExternalLink, ChevronDown } from 'lucide-react';
 
 interface NavbarProps {
   onOpenChat: () => void;
 }
 
-export const Navbar: FC<NavbarProps> = ({ onOpenChat }) => {
-  return (
-    <header className="sticky top-0 z-40 backdrop-blur-md bg-white/80 border-b border-[#F0EBE6]">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 h-18 flex items-center justify-between">
-        <a href={ROUTE_HOME} className="flex items-center gap-3 group">
-          <img
-            src="/assets/logo.png"
-            alt={APP_NAME}
-            className="w-10 h-10 rounded-2xl shadow-sm group-hover:scale-105 transition-transform"
-          />
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-extrabold text-xl tracking-tight text-[#2D3142]">
-                {APP_NAME}
-              </span>
-              <span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-[#EFFBF5] text-[#34A873] border border-[#DCF7EB]">
-                {BADGE_LIVE_NOW}
-              </span>
-            </div>
-            <div className="text-xs text-[#71788E] -mt-0.5 font-medium">Routine Tracker</div>
-          </div>
-        </a>
+const LANGUAGE_LABELS: Record<string, string> = {
+  en: 'English',
+  he: 'עברית',
+  ru: 'Русский',
+  es: 'Español',
+};
 
-        <nav className="flex items-center gap-2 sm:gap-4">
+export const Navbar: FC<NavbarProps> = ({ onOpenChat }) => {
+  const { t, locale, setLocale } = useLingo();
+  const [langOpen, setLangOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-40 backdrop-blur-md bg-white/90 border-b border-[#F0EBE6] shadow-xs">
+      <div className="max-w-7xl mx-auto px-6 sm:px-10 h-20 sm:h-22 flex items-center justify-between gap-6">
+        <div className="flex items-center gap-6">
+          <Link to={ROUTE_HOME} className="flex items-center gap-3.5 group">
+            <img
+              src="/assets/logo.png"
+              alt={APP_NAME}
+              className="w-11 h-11 rounded-2xl shadow-sm group-hover:scale-105 transition-transform"
+            />
+            <div>
+              <div className="flex items-center gap-2">
+                <Typography variant="h5" className="font-extrabold text-xl tracking-tight text-[#2D3142]">
+                  {APP_NAME}
+                </Typography>
+                <Badge variant="success" pill size="sm" className="font-bold text-[10px]">
+                  {BADGE_LIVE_NOW}
+                </Badge>
+              </div>
+              <Typography variant="caption" className="text-xs text-[#71788E] -mt-0.5 font-medium block">
+                Routine Tracker
+              </Typography>
+            </div>
+          </Link>
+
           <a
-            href="#features"
-            className="hidden sm:inline-block text-sm font-semibold text-[#71788E] hover:text-[#2D3142] px-3 py-2 rounded-xl hover:bg-[#FBF7F2] transition-colors"
+            href="https://forgedevstack.com"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Part of ForgeDevStack Ecosystem"
+            className="hidden lg:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-50/80 border border-orange-200/60 text-xs font-bold text-orange-700 hover:bg-orange-100 transition-colors shadow-2xs"
           >
-            Features
+            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
+            <span>ForgeDevStack</span>
+            <ExternalLink className="w-3.5 h-3.5 text-orange-500 opacity-70" />
           </a>
-          <a
-            href="#preview"
-            className="hidden sm:inline-block text-sm font-semibold text-[#71788E] hover:text-[#2D3142] px-3 py-2 rounded-xl hover:bg-[#FBF7F2] transition-colors"
-          >
-            Screenshots
-          </a>
-          <a
-            href={ROUTE_PRIVACY}
-            className="text-sm font-semibold text-[#71788E] hover:text-[#2D3142] px-3 py-2 rounded-xl hover:bg-[#FBF7F2] transition-colors"
-          >
-            Privacy
-          </a>
+        </div>
+
+        <nav className="flex items-center gap-3 sm:gap-6">
+          <div className="hidden md:flex items-center gap-2 lg:gap-4">
+            <a
+              href="/#features"
+              className="text-sm font-semibold text-[#71788E] hover:text-[#2D3142] px-3.5 py-2 rounded-xl hover:bg-[#FBF7F2] transition-colors"
+            >
+              {t('nav.features')}
+            </a>
+            <Link
+              to={ROUTE_DOCS}
+              className="text-sm font-semibold text-[#71788E] hover:text-[#2D3142] px-3.5 py-2 rounded-xl hover:bg-[#FBF7F2] transition-colors"
+            >
+              {t('nav.docs')}
+            </Link>
+            <Link
+              to={ROUTE_CHANGELOG}
+              className="text-sm font-semibold text-[#71788E] hover:text-[#2D3142] px-3.5 py-2 rounded-xl hover:bg-[#FBF7F2] transition-colors"
+            >
+              {t('nav.changelog')}
+            </Link>
+            <Link
+              to={ROUTE_PRIVACY}
+              className="text-sm font-semibold text-[#71788E] hover:text-[#2D3142] px-3.5 py-2 rounded-xl hover:bg-[#FBF7F2] transition-colors"
+            >
+              {t('nav.privacy')}
+            </Link>
+          </div>
+
+          <div className="relative">
+            <button
+              onClick={() => setLangOpen(!langOpen)}
+              className="flex items-center gap-2 px-3 py-2 rounded-xl bg-[#FBF7F2] hover:bg-[#F0EBE6] text-[#2D3142] text-xs font-bold border border-[#E8E2D9] transition-colors"
+              aria-label="Change language"
+            >
+              <Globe className="w-4 h-4 text-[#71788E]" />
+              <span>{LANGUAGE_LABELS[locale] || 'English'}</span>
+              <ChevronDown className="w-3.5 h-3.5 text-[#71788E]" />
+            </button>
+
+            {langOpen && (
+              <div className="absolute right-0 mt-2 w-40 bg-white rounded-2xl shadow-xl border border-[#F0EBE6] py-1.5 z-50 animate-in fade-in zoom-in-95 duration-150">
+                {['en', 'he', 'ru', 'es'].map((code) => (
+                  <button
+                    key={code}
+                    onClick={() => {
+                      void setLocale(code);
+                      setLangOpen(false);
+                      document.documentElement.dir = code === 'he' ? 'rtl' : 'ltr';
+                    }}
+                    className={`w-full text-left px-4 py-2 text-xs font-semibold transition-colors flex items-center justify-between ${
+                      locale === code
+                        ? 'bg-[#FFF0F0] text-[#FF7A7A]'
+                        : 'text-[#2D3142] hover:bg-[#FBF7F2]'
+                    }`}
+                  >
+                    <span>{LANGUAGE_LABELS[code]}</span>
+                    {locale === code && <span className="text-[#FF7A7A] font-bold">✓</span>}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           <button
             onClick={onOpenChat}
-            className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#FFF0F0] hover:bg-[#FFE0E0] text-[#FF7A7A] font-semibold text-sm transition-colors"
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FFF0F0] hover:bg-[#FFE0E0] text-[#FF7A7A] font-semibold text-sm transition-colors shadow-2xs"
           >
             <Sparkles className="w-4 h-4 text-[#FF7A7A]" />
-            <span className="hidden xs:inline">Ask AI</span>
+            <span className="hidden sm:inline">{t('nav.askAi')}</span>
           </button>
 
           <a
             href={URL_GOOGLE_PLAY}
             target="_blank"
             rel="noopener noreferrer"
-            className="px-4 py-2 rounded-xl bg-[#2D3142] hover:bg-[#1C1F2B] text-white text-sm font-semibold transition-colors"
+            className="px-5 py-2.5 rounded-xl bg-[#2D3142] hover:bg-[#1C1F2B] text-white text-sm font-semibold transition-colors shadow-sm"
           >
-            Install
+            {t('nav.install')}
           </a>
         </nav>
       </div>
