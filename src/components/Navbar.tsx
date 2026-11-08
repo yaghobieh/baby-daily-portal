@@ -33,7 +33,7 @@ export const Navbar: FC<NavbarProps> = () => {
 
   useEffect(() => {
     try {
-      const saved = localStorage.getItem('baby_daily_token');
+      const saved = localStorage.getItem('babydaily_portal_token') || localStorage.getItem('baby_daily_token');
       setHasToken(Boolean(saved));
     } catch {
       setHasToken(false);
