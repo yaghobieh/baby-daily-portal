@@ -34,6 +34,7 @@ import type {
   AiInsightsResponse,
   BabyStatsResponse,
 } from './Dashboard.types';
+import { Smartphone, Monitor, Sparkles, RefreshCw, LogOut, Check, Apple } from 'lucide-react';
 
 interface DashboardProps {
   onOpenChat: () => void;
@@ -47,9 +48,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
   const [name, setName] = useState('');
   const [newBabyName, setNewBabyName] = useState('');
   const [noteText, setNoteText] = useState('');
-  const [showGooglePrompt, setShowGooglePrompt] = useState(false);
-  const [googleEmail, setGoogleEmail] = useState('');
-  const [googleName, setGoogleName] = useState('');
+  const [activeTab, setActiveTab] = useState<'feed' | 'diaper' | 'note' | null>(null);
+  const [viewMode, setViewMode] = useState<'app' | 'expanded'>('app');
 
   const [user, setUser] = useState<PortalUser | null>(null);
   const [babies, setBabies] = useState<PortalBaby[]>([]);
@@ -157,10 +157,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
   };
 
   const handleGoogleAccountPicker = () => {
-    const google = (window as unknown as { google?: any }).google;
-    if (google?.accounts?.oauth2) {
+    const w = window as unknown as { google?: any };
+    if (w.google?.accounts?.oauth2) {
       try {
-        const client = google.accounts.oauth2.initTokenClient({
+        const client = w.google.accounts.oauth2.initTokenClient({
           client_id: '465653534147-2j97qb01btip30m5kqo02jglsgfuir98.apps.googleusercontent.com',
           scope: 'email profile openid',
           prompt: 'select_account',
@@ -181,7 +181,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                 savePortalToken(res.token);
                 setToken(res.token);
                 setUser(res.user);
-                setShowGooglePrompt(false);
                 setInitialized(true);
                 await loadFullSession(res.token);
               } catch (err) {
@@ -198,43 +197,47 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
         console.warn('Google GSI error', err);
       }
     }
-    // Fallback if third-party script is blocked or still loading
-    setShowGooglePrompt(true);
-  };
 
-  const handleGoogleAuthSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    const gEmail = (googleEmail || email).trim().toLowerCase();
-    if (!gEmail || !gEmail.includes('@')) {
-      setErrorMsg('Please enter a valid Google / Gmail address');
-      return;
-    }
-
-    setLoading(true);
-    setErrorMsg(null);
-    setStatusMsg(null);
-    try {
-      const res = await apiRequest<{ token: string; user: PortalUser }>('/auth/google', null, {
-        method: 'POST',
-        body: JSON.stringify({
-          email: gEmail,
-          name: googleName || name || gEmail.split('@')[0] || 'Parent',
-          locale: 'en',
-          utcOffset: -new Date().getTimezoneOffset(),
-        }),
-      });
-
-      savePortalToken(res.token);
-      setToken(res.token);
-      setUser(res.user);
-      setShowGooglePrompt(false);
-      setInitialized(true);
-      await loadFullSession(res.token);
-    } catch (err) {
-      setErrorMsg((err as Error).message);
-    } finally {
-      setLoading(false);
-    }
+    // Dynamic fallback load if script was deferred
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    script.onload = () => {
+      try {
+        const g = (window as unknown as { google?: any }).google;
+        if (g?.accounts?.oauth2) {
+          const client = g.accounts.oauth2.initTokenClient({
+            client_id: '465653534147-2j97qb01btip30m5kqo02jglsgfuir98.apps.googleusercontent.com',
+            scope: 'email profile openid',
+            prompt: 'select_account',
+            callback: async (resp: { access_token?: string }) => {
+              if (resp?.access_token) {
+                setLoading(true);
+                const res = await apiRequest<{ token: string; user: PortalUser }>('/auth/google', null, {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    accessToken: resp.access_token,
+                    locale: 'en',
+                    utcOffset: -new Date().getTimezoneOffset(),
+                  }),
+                });
+                savePortalToken(res.token);
+                setToken(res.token);
+                setUser(res.user);
+                setInitialized(true);
+                await loadFullSession(res.token);
+                setLoading(false);
+              }
+            },
+          });
+          client.requestAccessToken({ prompt: 'select_account' });
+        }
+      } catch (err) {
+        setErrorMsg('Unable to open Google account chooser. Please use email/phone and password.');
+      }
+    };
+    document.head.appendChild(script);
   };
 
   const handleLogout = () => {
@@ -282,18 +285,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
     if (!token || !selectedBabyId) return;
     setLoading(true);
     setErrorMsg(null);
-    setStatusMsg(null);
     try {
       await apiRequest(`/babies/${selectedBabyId}/entries`, token, {
         method: 'POST',
         body: JSON.stringify({
           type,
           startedAt: new Date().toISOString(),
-          ...(endedAt !== undefined ? { endedAt } : {}),
+          endedAt: endedAt === undefined ? new Date().toISOString() : endedAt,
           data,
         }),
       });
-      setStatusMsg(`Logged ${type} entry and synced with mobile app!`);
+      setStatusMsg(`Entry logged & synced across all family devices!`);
+      setActiveTab(null);
       await loadBabyDetails(token, selectedBabyId);
     } catch (err) {
       setErrorMsg((err as Error).message);
@@ -327,7 +330,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
             data: { kind: 'nap' },
           }),
         });
-        setStatusMsg('Live sleep timer started! Synced across all devices.');
+        setStatusMsg('Live sleep timer started! Synced across Apple iOS & Android.');
       }
       await loadBabyDetails(token, selectedBabyId);
     } catch (err) {
@@ -345,7 +348,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
       await apiRequest(`/babies/${selectedBabyId}/entries/${entryId}`, token, {
         method: 'DELETE',
       });
-      setStatusMsg('Entry deleted.');
+      setStatusMsg('Entry removed & synced.');
       await loadBabyDetails(token, selectedBabyId);
     } catch (err) {
       setErrorMsg((err as Error).message);
@@ -369,7 +372,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
         body: JSON.stringify({ sendToEmail: true, sendNotification: true }),
       });
       setStatusMsg(
-        `✨ AI Summary generated & sent to your notifications${res.emailSent ? ' and email' : ''}: "${res.summary}"`
+        `✨ AI Daily Summary sent to notifications${res.emailSent ? ' and email' : ''}: "${res.summary}"`
       );
     } catch (err) {
       setErrorMsg((err as Error).message);
@@ -399,42 +402,37 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
     }
   };
 
+  const activeBaby = babies.find((b) => b.id === selectedBabyId) || babies[0];
+
   return (
-    <div className="py-10 sm:py-14">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-10">
+    <div className="py-8 sm:py-12">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
         <div className="text-center">
           <Flex justify="center" align="center" gap={2} className="mb-3">
-            <Chip
-              variant="soft"
-              color="primary"
-              size="md"
-              icon={<StarIcon size={16} />}
-              className="px-4 py-1.5 font-bold bg-[#FFF0F0] text-[#FF7A7A] border border-[#FFE0E0]"
-            >
-              <Typography variant="caption" className="font-bold text-[#FF7A7A]">
-                Unified Web & Mobile Baby Companion
-              </Typography>
-            </Chip>
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#EBFBF3] border border-[#BCEAD5] text-xs font-black text-[#1E824C] shadow-2xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#48C78E] animate-pulse" />
+              <span>🟢 Live Auto-Sync: Apple iOS & Android</span>
+            </div>
           </Flex>
-          <Typography variant="h1" className="text-3xl sm:text-5xl font-black text-[#2D3142] tracking-tight mb-3">
-            BabyDaily Web Dashboard & AI
+          <Typography variant="h1" className="text-3xl sm:text-4xl font-black text-[#2D3142] tracking-tight mb-2">
+            BabyDaily Web App Companion
           </Typography>
-          <Typography variant="body1" className="text-base sm:text-lg text-[#71788E] max-w-2xl mx-auto">
-            Sign in with the same account you use on the BabyDaily mobile app. Manage feedings, live sleep timers, AI insights, and 7-day statistics from any device.
+          <Typography variant="body1" className="text-sm sm:text-base text-[#71788E] max-w-2xl mx-auto">
+            Manage routine feeds, live sleep timers, and DeepSeek AI insights from your browser. Every change mirrors to your family&apos;s iPhones and Android phones instantly.
           </Typography>
         </div>
 
         {errorMsg && (
-          <Card variant="outlined" className="p-4 bg-[#FFF0F0] border-[#FF7A7A] rounded-2xl">
-            <Typography variant="body2" className="text-[#D63031] font-bold">
+          <Card variant="outlined" className="p-4 bg-[#FFF0F0] border-[#FF7A7A] rounded-2xl max-w-xl mx-auto">
+            <Typography variant="body2" className="text-[#D63031] font-bold text-center">
               {errorMsg}
             </Typography>
           </Card>
         )}
 
         {statusMsg && (
-          <Card variant="outlined" className="p-4 bg-[#EFFBF5] border-[#48C78E] rounded-2xl">
-            <Typography variant="body2" className="text-[#1E824C] font-bold">
+          <Card variant="outlined" className="p-4 bg-[#EFFBF5] border-[#48C78E] rounded-2xl max-w-xl mx-auto">
+            <Typography variant="body2" className="text-[#1E824C] font-bold text-center">
               {statusMsg}
             </Typography>
           </Card>
@@ -442,13 +440,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
 
         {!token || !user ? (
           <div className="max-w-md mx-auto">
-            <Card variant="elevated" className="p-6 sm:p-8 bg-white rounded-3xl border border-[#F0EBE6]">
+            <Card variant="elevated" className="p-6 sm:p-8 bg-white rounded-3xl border border-[#F0EBE6] shadow-sm">
               <Flex justify="between" align="center" className="mb-6">
-                <Typography variant="h4" className="text-xl font-extrabold text-[#2D3142]">
-                  {authMode === 'login' ? 'Sign In to Your Family Account' : 'Create Your BabyDaily Account'}
-                </Typography>
+                <div>
+                  <Typography variant="h4" className="text-xl font-extrabold text-[#2D3142]">
+                    {authMode === 'login' ? 'Sign In to Your Account' : 'Create Your Account'}
+                  </Typography>
+                  <Typography variant="caption" className="text-xs text-[#71788E]">
+                    Synced with your mobile app
+                  </Typography>
+                </div>
                 <Badge variant="primary" pill size="sm">
-                  Synced with App
+                  Live Cloud
                 </Badge>
               </Flex>
 
@@ -469,13 +472,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
 
                 <div>
                   <Typography variant="caption" className="font-bold text-[#2D3142] block mb-1">
-                    {authMode === 'login' ? 'Email or Phone Number' : 'Email Address'}
+                    Email Address or Phone Number
                   </Typography>
                   <Input
                     type="text"
                     value={email}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                    placeholder={authMode === 'login' ? 'you@example.com or phone number' : 'you@example.com'}
+                    placeholder="you@example.com or 050-123-4567"
                     required
                     fullWidth
                   />
@@ -501,7 +504,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                   size="lg"
                   fullWidth
                   disabled={loading}
-                  className="bg-[#FF7A7A] hover:bg-[#E86262] text-white font-bold rounded-2xl py-3"
+                  className="bg-[#FF7A7A] hover:bg-[#E86262] text-white font-bold rounded-2xl py-3 shadow-sm transition-colors"
                 >
                   {loading
                     ? 'Connecting to BabyDaily Cloud...'
@@ -520,64 +523,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                 </div>
               </div>
 
-              {!showGooglePrompt ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="lg"
-                  fullWidth
-                  disabled={loading}
-                  onClick={handleGoogleAccountPicker}
-                  className="border-[#D1D5DB] text-[#1F2937] hover:bg-[#F9FAFB] font-bold rounded-2xl py-3 flex items-center justify-center gap-3 shadow-2xs"
-                >
-                  <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
-                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
-                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
-                  </svg>
-                  <span>Continue with Google</span>
-                </Button>
-              ) : (
-                <form onSubmit={handleGoogleAuthSubmit} className="p-4 bg-[#F8FAFC] rounded-2xl border border-[#E2E8F0] space-y-3">
-                  <Flex justify="between" align="center">
-                    <Typography variant="subtitle2" className="text-xs font-bold text-[#1E293B] flex items-center gap-1.5">
-                      <span className="text-base">G</span> Sign in with Google / Gmail
-                    </Typography>
-                    <button
-                      type="button"
-                      onClick={() => setShowGooglePrompt(false)}
-                      className="text-xs text-[#64748B] hover:text-[#0F172A]"
-                    >
-                      ✕ Cancel
-                    </button>
-                  </Flex>
-                  <Input
-                    type="email"
-                    value={googleEmail}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGoogleEmail(e.target.value)}
-                    placeholder="name@gmail.com"
-                    required
-                    fullWidth
-                  />
-                  <Input
-                    value={googleName}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setGoogleName(e.target.value)}
-                    placeholder="Your Name (optional)"
-                    fullWidth
-                  />
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="md"
-                    fullWidth
-                    disabled={loading}
-                    className="bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold rounded-xl py-2"
-                  >
-                    {loading ? 'Verifying with Google...' : 'Sign In with Google Account'}
-                  </Button>
-                </form>
-              )}
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                fullWidth
+                disabled={loading}
+                onClick={handleGoogleAccountPicker}
+                className="border-[#D1D5DB] text-[#1F2937] hover:bg-[#F9FAFB] font-bold rounded-2xl py-3 flex items-center justify-center gap-3 shadow-2xs"
+              >
+                <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
+                  <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                  <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                  <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z" />
+                  <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z" />
+                </svg>
+                <span>Continue with Google Account</span>
+              </Button>
 
               <div className="mt-5 text-center">
                 <Button
@@ -594,162 +556,266 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
             </Card>
           </div>
         ) : (
-          <div className="space-y-8">
-            <Card variant="elevated" className="p-6 bg-white rounded-3xl border border-[#F0EBE6]">
-              <Flex justify="between" align="center" wrap="wrap" gap={4}>
+          <div className="space-y-6">
+            <div className="flex items-center justify-between flex-wrap gap-4 px-2">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-[#FFF0F0] border border-[#FFE0E0] flex items-center justify-center text-xl shadow-2xs">
+                  👶
+                </div>
                 <div>
-                  <Flex align="center" gap={3} wrap="wrap">
-                    <Typography variant="h4" className="text-xl font-extrabold text-[#2D3142]">
-                      Hello, {user.name}
-                    </Typography>
-                    <Badge
-                      variant={user.isPremium ? 'success' : 'warning'}
-                      pill
-                      size="md"
-                      className="font-bold"
-                    >
-                      {user.isPremium
-                        ? `✨ PREMIUM (${user.subscriptionPlan})`
-                        : `FREE TIER • ${insights?.quota.aiQueriesToday ?? user.aiQueriesToday}/3 AI Uses Today`}
-                    </Badge>
-                  </Flex>
-                  <Typography variant="body2" className="text-xs text-[#71788E] mt-1">
-                    Signed in as {user.email} • Shared in real time with your BabyDaily mobile app
+                  <Typography variant="h4" className="text-lg font-black text-[#2D3142]">
+                    {activeBaby?.name || 'My Baby'}
+                  </Typography>
+                  <Typography variant="caption" className="text-xs text-[#71788E]">
+                    Caregiver: {user.name} ({user.email})
                   </Typography>
                 </div>
+              </div>
 
-                <Flex align="center" gap={2} wrap="wrap">
-                  {babies.map((b) => (
-                    <Button
-                      key={b.id}
-                      variant={b.id === selectedBabyId ? 'primary' : 'outline'}
-                      size="sm"
-                      radius="pill"
-                      onClick={() => {
-                        setSelectedBabyId(b.id);
-                        void loadBabyDetails(token, b.id);
-                      }}
-                      className={
-                        b.id === selectedBabyId
-                          ? 'bg-[#FF7A7A] text-white font-bold'
-                          : 'border-[#E8E2D9] text-[#2D3142] font-semibold'
-                      }
-                    >
-                      👶 {b.name}
-                    </Button>
-                  ))}
-
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    radius="pill"
-                    icon={<ClockIcon size={14} />}
-                    onClick={() => selectedBabyId && void loadBabyDetails(token, selectedBabyId)}
-                  >
-                    Refresh
-                  </Button>
-
-                  <Button variant="ghost" size="sm" onClick={handleLogout} className="text-[#71788E]">
-                    Sign Out
-                  </Button>
-                </Flex>
-              </Flex>
-
-              {babies.length === 0 && (
-                <div className="mt-6 pt-6 border-t border-[#F0EBE6]">
-                  <Typography variant="subtitle1" className="font-bold text-[#2D3142] mb-2">
-                    Add Your Baby Profile
-                  </Typography>
-                  <Flex gap={3} wrap="wrap">
-                    <Input
-                      value={newBabyName}
-                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewBabyName(e.target.value)}
-                      placeholder="Baby's name (e.g. Liam)"
-                    />
-                    <Button
-                      variant="primary"
-                      icon={<PlusIcon size={16} />}
-                      onClick={() => void handleCreateBaby()}
-                      className="bg-[#FF7A7A] text-white font-bold"
-                    >
-                      Add Baby
-                    </Button>
-                  </Flex>
-                </div>
-              )}
-            </Card>
-
-            {selectedBabyId && (
-              <>
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card
-                    variant="elevated"
-                    className={`p-6 rounded-3xl border ${
-                      summary?.activeSleep
-                        ? 'bg-[#23203F] text-white border-[#3B3568]'
-                        : 'bg-[#EFFBF5] text-[#2D3142] border-[#BCEAD5]'
+              <div className="flex items-center gap-2">
+                <div className="hidden sm:inline-flex bg-[#F5F3FC] p-1 rounded-xl border border-[#E8E2D9]">
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('app')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      viewMode === 'app' ? 'bg-white text-[#8C7AE6] shadow-2xs' : 'text-[#71788E]'
                     }`}
                   >
-                    <Flex justify="between" align="center" wrap="wrap" gap={4}>
-                      <div>
-                        <Badge
-                          variant={summary?.activeSleep ? 'primary' : 'success'}
-                          pill
-                          size="sm"
-                          className="mb-2"
-                        >
-                          {summary?.activeSleep ? '🌙 SLEEPING NOW' : '☀️ AWAKE NOW'}
-                        </Badge>
-                        <Typography
-                          variant="h3"
-                          className={`text-2xl font-black ${
-                            summary?.activeSleep ? 'text-white' : 'text-[#2D3142]'
-                          }`}
-                        >
-                          {summary?.activeSleep
-                            ? `Started nap at ${formatEntryTime(summary.activeSleep.startedAt)}`
-                            : insights?.awakeMinutes !== null && insights?.awakeMinutes !== undefined
-                              ? `Awake for ${insights.awakeMinutes} minutes`
-                              : 'Ready to track sleep & wake windows'}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          className={`text-xs mt-1 ${
-                            summary?.activeSleep ? 'text-white/80' : 'text-[#4A5568]'
-                          }`}
-                        >
-                          {insights?.ageText
-                            ? `${insights.babyName} • ${insights.ageText} • Optimal wake window: ${insights.recommendedWakeWindow.min}–${insights.recommendedWakeWindow.max}m`
-                            : 'Live sleep status synced between Web & Mobile'}
-                        </Typography>
-                      </div>
+                    <Smartphone className="w-3.5 h-3.5" />
+                    <span>App View</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setViewMode('expanded')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                      viewMode === 'expanded' ? 'bg-white text-[#8C7AE6] shadow-2xs' : 'text-[#71788E]'
+                    }`}
+                  >
+                    <Monitor className="w-3.5 h-3.5" />
+                    <span>Expanded</span>
+                  </button>
+                </div>
 
-                      <Button
-                        variant="primary"
-                        size="lg"
-                        radius="pill"
-                        disabled={loading}
-                        onClick={() => void handleToggleSleep()}
-                        className={
-                          summary?.activeSleep
-                            ? 'bg-[#FFAA00] hover:bg-[#E59800] text-[#23203F] font-extrabold px-6'
-                            : 'bg-[#48C78E] hover:bg-[#3BB07B] text-white font-extrabold px-6'
-                        }
+                <Button
+                  variant="outline"
+                  size="sm"
+                  radius="pill"
+                  icon={<RefreshCw size={13} />}
+                  onClick={() => selectedBabyId && void loadBabyDetails(token, selectedBabyId)}
+                  className="text-xs font-semibold border-[#E8E2D9]"
+                >
+                  Sync
+                </Button>
+
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  icon={<LogOut size={13} />}
+                  onClick={handleLogout}
+                  className="text-xs font-semibold text-[#71788E] hover:text-[#D63031]"
+                >
+                  Sign Out
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between p-3 rounded-2xl bg-[#F8FAFC] border border-[#E2E8F0] text-xs font-medium text-[#475569] flex-wrap gap-2">
+              <div className="flex items-center gap-2">
+                <span className="w-2 h-2 rounded-full bg-[#48C78E] animate-ping" />
+                <span className="font-bold text-[#1E293B]">Auto-Sync Connected:</span>
+                <span>PostgreSQL on Neon Serverless</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] text-[11px] font-bold text-[#1E293B] flex items-center gap-1">
+                  <Apple className="w-3 h-3 text-[#1E293B]" /> iOS App
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] text-[11px] font-bold text-[#1E293B] flex items-center gap-1">
+                  <Smartphone className="w-3 h-3 text-[#34A853]" /> Android App
+                </span>
+                <span className="px-2 py-0.5 rounded-md bg-[#EFFBF5] text-[#1E824C] border border-[#BCEAD5] text-[11px] font-bold">
+                  ✓ Instant Fanout
+                </span>
+              </div>
+            </div>
+
+            {babies.length > 1 && (
+              <Flex gap={2} wrap="wrap">
+                {babies.map((b) => (
+                  <Button
+                    key={b.id}
+                    variant={b.id === selectedBabyId ? 'primary' : 'outline'}
+                    size="sm"
+                    radius="pill"
+                    onClick={() => {
+                      setSelectedBabyId(b.id);
+                      void loadBabyDetails(token, b.id);
+                    }}
+                    className={
+                      b.id === selectedBabyId
+                        ? 'bg-[#FF7A7A] text-white font-bold'
+                        : 'border-[#E8E2D9] text-[#2D3142] font-semibold'
+                    }
+                  >
+                    👶 {b.name}
+                  </Button>
+                ))}
+              </Flex>
+            )}
+
+            {babies.length === 0 && (
+              <Card variant="outlined" className="p-6 bg-white rounded-3xl border border-[#F0EBE6] text-center max-w-md mx-auto">
+                <Typography variant="h4" className="text-lg font-bold text-[#2D3142] mb-2">
+                  Welcome to BabyDaily!
+                </Typography>
+                <Typography variant="body2" className="text-xs text-[#71788E] mb-4">
+                  Add your baby&apos;s name to start tracking routines across your phone and web.
+                </Typography>
+                <Flex gap={2} justify="center">
+                  <Input
+                    value={newBabyName}
+                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNewBabyName(e.target.value)}
+                    placeholder="Baby's name (e.g. Liam)"
+                  />
+                  <Button
+                    variant="primary"
+                    icon={<PlusIcon size={16} />}
+                    onClick={() => void handleCreateBaby()}
+                    className="bg-[#FF7A7A] text-white font-bold whitespace-nowrap"
+                  >
+                    Add Baby
+                  </Button>
+                </Flex>
+              </Card>
+            )}
+
+            {selectedBabyId && (
+              <div
+                className={
+                  viewMode === 'app'
+                    ? 'max-w-md mx-auto space-y-5 bg-[#FAF8F5] p-4 sm:p-5 rounded-[32px] border-2 border-[#EAE4DC] shadow-md'
+                    : 'space-y-6'
+                }
+              >
+                <Card
+                  variant="elevated"
+                  className={`p-5 rounded-3xl border transition-all ${
+                    summary?.activeSleep
+                      ? 'bg-[#23203F] text-white border-[#3B3568] shadow-lg'
+                      : 'bg-[#EFFBF5] text-[#2D3142] border-[#BCEAD5] shadow-xs'
+                  }`}
+                >
+                  <Flex justify="between" align="center" wrap="wrap" gap={3}>
+                    <div>
+                      <Badge
+                        variant={summary?.activeSleep ? 'primary' : 'success'}
+                        pill
+                        size="sm"
+                        className="mb-1.5 font-bold"
                       >
-                        {summary?.activeSleep ? '☀️ Baby Woke Up' : '🌙 Start Sleep Timer'}
-                      </Button>
-                    </Flex>
-                  </Card>
+                        {summary?.activeSleep ? '🌙 SLEEPING NOW' : '☀️ AWAKE NOW'}
+                      </Badge>
+                      <Typography
+                        variant="h3"
+                        className={`text-xl font-black ${
+                          summary?.activeSleep ? 'text-white' : 'text-[#2D3142]'
+                        }`}
+                      >
+                        {summary?.activeSleep
+                          ? `Nap in progress (${formatEntryTime(summary.activeSleep.startedAt)})`
+                          : insights?.awakeMinutes !== null && insights?.awakeMinutes !== undefined
+                            ? `Awake for ${insights.awakeMinutes} minutes`
+                            : 'Ready for next routine'}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        className={`text-xs mt-0.5 ${
+                          summary?.activeSleep ? 'text-white/80' : 'text-[#4A5568]'
+                        }`}
+                      >
+                        {insights?.recommendedWakeWindow
+                          ? `Sweet-spot wake window: ${insights.recommendedWakeWindow.min}–${insights.recommendedWakeWindow.max}m`
+                          : 'Live sleep timer synced with phone alarms'}
+                      </Typography>
+                    </div>
 
-                  <Card variant="elevated" className="p-6 bg-white rounded-3xl border border-[#F0EBE6]">
-                    <Typography variant="h5" className="font-extrabold text-lg text-[#2D3142] mb-3">
-                      ⚡ 1-Tap Web Routine Logger
-                    </Typography>
-                    <div className="space-y-3">
-                      <Flex align="center" gap={2} wrap="wrap">
-                        <Typography variant="caption" className="font-bold text-[#71788E] w-20">
-                          🍼 Feeding:
-                        </Typography>
+                    <Button
+                      variant="primary"
+                      size="md"
+                      radius="pill"
+                      disabled={loading}
+                      onClick={() => void handleToggleSleep()}
+                      className={
+                        summary?.activeSleep
+                          ? 'bg-[#FFAA00] hover:bg-[#E59800] text-[#23203F] font-black px-5 py-2.5'
+                          : 'bg-[#48C78E] hover:bg-[#3BB07B] text-white font-black px-5 py-2.5'
+                      }
+                    >
+                      {summary?.activeSleep ? '☀️ Baby Woke Up' : '🌙 Start Sleep Timer'}
+                    </Button>
+                  </Flex>
+                </Card>
+
+                <div className="bg-white p-4 rounded-3xl border border-[#F0EBE6] shadow-xs">
+                  <Typography variant="caption" className="font-extrabold text-[11px] uppercase tracking-wider text-[#71788E] block mb-3 text-center">
+                    1-Tap Routine Logger
+                  </Typography>
+
+                  <div className="grid grid-cols-4 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab(activeTab === 'feed' ? null : 'feed')}
+                      className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${
+                        activeTab === 'feed'
+                          ? 'bg-[#FFF0F0] border-[#FF7A7A] text-[#FF7A7A] shadow-xs'
+                          : 'bg-[#FFFDFB] border-[#F0EBE6] text-[#2D3142] hover:bg-[#FFF5F5]'
+                      }`}
+                    >
+                      <span className="text-2xl mb-1">🍼</span>
+                      <span className="text-xs font-bold">Feed</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void handleToggleSleep()}
+                      className="flex flex-col items-center justify-center p-3 rounded-2xl border border-[#F0EBE6] bg-[#FFFDFB] text-[#2D3142] hover:bg-[#F5F3FC] transition-all"
+                    >
+                      <span className="text-2xl mb-1">😴</span>
+                      <span className="text-xs font-bold">{summary?.activeSleep ? 'Wake' : 'Sleep'}</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab(activeTab === 'diaper' ? null : 'diaper')}
+                      className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${
+                        activeTab === 'diaper'
+                          ? 'bg-[#F0F9FF] border-[#3897F0] text-[#3897F0] shadow-xs'
+                          : 'bg-[#FFFDFB] border-[#F0EBE6] text-[#2D3142] hover:bg-[#F0F9FF]'
+                      }`}
+                    >
+                      <span className="text-2xl mb-1">🧷</span>
+                      <span className="text-xs font-bold">Diaper</span>
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => setActiveTab(activeTab === 'note' ? null : 'note')}
+                      className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${
+                        activeTab === 'note'
+                          ? 'bg-[#FFF9F0] border-[#FFAA00] text-[#FFAA00] shadow-xs'
+                          : 'bg-[#FFFDFB] border-[#F0EBE6] text-[#2D3142] hover:bg-[#FFF9F0]'
+                      }`}
+                    >
+                      <span className="text-2xl mb-1">💊</span>
+                      <span className="text-xs font-bold">Notes</span>
+                    </button>
+                  </div>
+
+                  {activeTab === 'feed' && (
+                    <div className="mt-4 p-3 bg-[#FFF5F5] rounded-2xl border border-[#FFE0E0] space-y-2 animate-in fade-in duration-150">
+                      <Typography variant="caption" className="font-bold text-xs text-[#FF7A7A] block">
+                        Quick Bottle Volume Presets:
+                      </Typography>
+                      <Flex wrap="wrap" gap={1}>
                         {QUICK_BOTTLE_AMOUNTS.map((ml) => (
                           <Button
                             key={ml}
@@ -758,9 +824,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                             radius="pill"
                             disabled={loading}
                             onClick={() => void handleLogEntry('FEED', { kind: 'bottle', amountMl: ml })}
-                            className="border-[#FFE0E0] text-[#FF7A7A] font-bold"
+                            className="bg-white border-[#FFE0E0] text-[#FF7A7A] font-bold text-xs"
                           >
-                            +{ml}ml Bottle
+                            +{ml}ml
                           </Button>
                         ))}
                         <Button
@@ -768,19 +834,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                           size="sm"
                           radius="pill"
                           disabled={loading}
-                          onClick={() =>
-                            void handleLogEntry('FEED', { kind: 'breast', side: 'both', durationMin: 15 })
-                          }
-                          className="border-[#FFE0E0] text-[#FF7A7A] font-bold"
+                          onClick={() => void handleLogEntry('FEED', { kind: 'breast', side: 'both', durationMin: 15 })}
+                          className="bg-white border-[#FFE0E0] text-[#FF7A7A] font-bold text-xs"
                         >
-                          +15m Nursing
+                          +15m Breast
                         </Button>
                       </Flex>
+                    </div>
+                  )}
 
-                      <Flex align="center" gap={2} wrap="wrap">
-                        <Typography variant="caption" className="font-bold text-[#71788E] w-20">
-                          🧷 Diaper:
-                        </Typography>
+                  {activeTab === 'diaper' && (
+                    <div className="mt-4 p-3 bg-[#F0F9FF] rounded-2xl border border-[#BAE6FD] space-y-2 animate-in fade-in duration-150">
+                      <Typography variant="caption" className="font-bold text-xs text-[#3897F0] block">
+                        Log Diaper Type:
+                      </Typography>
+                      <Flex wrap="wrap" gap={2}>
                         {(['wet', 'dirty', 'both'] as const).map((kind) => (
                           <Button
                             key={kind}
@@ -789,21 +857,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                             radius="pill"
                             disabled={loading}
                             onClick={() => void handleLogEntry('DIAPER', { kind })}
-                            className="border-[#E0F2FE] text-[#3897F0] font-bold capitalize"
+                            className="bg-white border-[#BAE6FD] text-[#3897F0] font-bold capitalize text-xs"
                           >
-                            + {kind}
+                            +{kind} Diaper
                           </Button>
                         ))}
                       </Flex>
+                    </div>
+                  )}
 
-                      <Flex align="center" gap={2} wrap="wrap">
+                  {activeTab === 'note' && (
+                    <div className="mt-4 p-3 bg-[#FFF9F0] rounded-2xl border border-[#FFE8CC] space-y-2 animate-in fade-in duration-150">
+                      <Typography variant="caption" className="font-bold text-xs text-[#D97706] block">
+                        Add Quick Note / Medicine:
+                      </Typography>
+                      <Flex gap={2}>
                         <Input
                           value={noteText}
                           onChange={(e: React.ChangeEvent<HTMLInputElement>) => setNoteText(e.target.value)}
-                          placeholder="Add a quick note (e.g. took Vitamin D, happy mood)..."
+                          placeholder="Vitamin D, fever medicine, tummy time..."
+                          fullWidth
                         />
                         <Button
-                          variant="outline"
+                          variant="primary"
                           size="sm"
                           radius="pill"
                           disabled={loading || !noteText.trim()}
@@ -811,226 +887,159 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                             void handleLogEntry('NOTE', { text: noteText.trim() });
                             setNoteText('');
                           }}
+                          className="bg-[#FFAA00] hover:bg-[#E59800] text-[#23203F] font-bold text-xs whitespace-nowrap"
                         >
-                          Save Note
+                          Save
                         </Button>
                       </Flex>
                     </div>
-                  </Card>
+                  )}
                 </div>
 
-                <Card
-                  variant="elevated"
-                  className="p-6 sm:p-8 bg-gradient-to-r from-[#FFF5F5] via-[#F5F3FC] to-[#EFFBF5] rounded-3xl border border-[#FFE0E0]"
-                >
-                  <Flex justify="between" align="center" wrap="wrap" gap={4} className="mb-5">
-                    <div>
-                      <Flex align="center" gap={2}>
-                        <Badge variant="primary" pill size="sm">
-                          ✨ LIVE AI ADVISOR
-                        </Badge>
-                        <Typography variant="h4" className="font-extrabold text-xl text-[#2D3142]">
-                          Smart Routine Suggestions & Daily Digest
-                        </Typography>
-                      </Flex>
-                      <Typography variant="body2" className="text-xs text-[#71788E] mt-1">
-                        Powered by DeepSeek AI using {insights?.babyName || 'your baby'}&apos;s real-time logs
+                <Card variant="elevated" className="p-4 sm:p-5 bg-gradient-to-r from-[#FFF5F5] to-[#F5F3FC] rounded-3xl border border-[#FFE0E0]">
+                  <Flex justify="between" align="center" className="mb-3">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="w-4 h-4 text-[#8C7AE6]" />
+                      <Typography variant="subtitle2" className="font-extrabold text-sm text-[#2D3142]">
+                        AI Routine Insights
                       </Typography>
                     </div>
-
-                    <Flex gap={2} wrap="wrap">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        radius="pill"
-                        icon={<StarIcon size={15} />}
-                        onClick={onOpenChat}
-                        className="bg-white border-[#FF7A7A] text-[#FF7A7A] font-bold"
-                      >
-                        Ask AI About Today
-                      </Button>
-                      <Button
-                        variant="primary"
-                        size="sm"
-                        radius="pill"
-                        disabled={loading}
-                        onClick={() => void handleSendDailySummary()}
-                        className="bg-[#8C7AE6] hover:bg-[#7866D5] text-white font-bold"
-                      >
-                        📧 Email & Notify Daily AI Summary
-                      </Button>
-                    </Flex>
+                    <Badge variant="primary" pill size="sm">
+                      DeepSeek AI
+                    </Badge>
                   </Flex>
 
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {(insights?.suggestions ?? []).map((s) => (
-                      <Card key={s.id} variant="outlined" className="p-4 bg-white rounded-2xl border-[#F0EBE6]">
-                        <Flex align="center" gap={2} className="mb-1.5">
-                          <Typography variant="h5" className="text-xl">
-                            {s.icon}
-                          </Typography>
-                          <Typography variant="subtitle2" className="font-extrabold text-sm text-[#2D3142]">
-                            {s.title}
-                          </Typography>
-                        </Flex>
-                        <Typography variant="body2" className="text-xs text-[#71788E] leading-relaxed">
+                  <div className="space-y-2">
+                    {(insights?.suggestions ?? []).slice(0, 2).map((s) => (
+                      <div key={s.id} className="p-3 bg-white/90 rounded-2xl border border-[#F0EBE6]">
+                        <Typography variant="subtitle2" className="font-bold text-xs text-[#2D3142] flex items-center gap-1.5 mb-0.5">
+                          <span>{s.icon}</span>
+                          <span>{s.title}</span>
+                        </Typography>
+                        <Typography variant="body2" className="text-[11px] text-[#71788E] leading-relaxed">
                           {s.body}
                         </Typography>
-                      </Card>
+                      </div>
                     ))}
                   </div>
+
+                  <Flex gap={2} className="mt-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      fullWidth
+                      radius="pill"
+                      onClick={onOpenChat}
+                      className="bg-white border-[#FF7A7A] text-[#FF7A7A] font-bold text-xs py-2"
+                    >
+                      💬 Ask AI
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      fullWidth
+                      radius="pill"
+                      disabled={loading}
+                      onClick={() => void handleSendDailySummary()}
+                      className="bg-[#8C7AE6] hover:bg-[#7866D5] text-white font-bold text-xs py-2"
+                    >
+                      📧 Daily Digest
+                    </Button>
+                  </Flex>
                 </Card>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  <Card variant="elevated" className="p-6 bg-white rounded-3xl border border-[#F0EBE6]">
-                    <Flex justify="between" align="center" className="mb-4">
-                      <div>
-                        <Typography variant="h5" className="font-extrabold text-lg text-[#2D3142]">
-                          📊 7-Day Routine Analytics
-                        </Typography>
-                        <Typography variant="caption" className="text-xs text-[#71788E]">
-                          Weekly averages & daily breakdown
-                        </Typography>
-                      </div>
-                      <Badge variant="success" pill size="sm">
-                        Premium Stats
-                      </Badge>
-                    </Flex>
+                <div className="bg-white p-4 sm:p-5 rounded-3xl border border-[#F0EBE6] shadow-xs">
+                  <Flex justify="between" align="center" className="mb-3">
+                    <Typography variant="h5" className="font-extrabold text-sm text-[#2D3142]">
+                      🕒 Today&apos;s Timeline
+                    </Typography>
+                    <Badge variant="info" pill size="sm">
+                      {entries.length} logged
+                    </Badge>
+                  </Flex>
 
-                    {stats && (
-                      <>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-5">
-                          <Card variant="outlined" className="p-3 bg-[#FFF8F0] rounded-2xl border-[#FFE8CC]">
-                            <Typography variant="caption" className="text-[11px] font-bold text-[#71788E] block">
-                              Avg Feeds / Day
-                            </Typography>
-                            <Typography variant="h5" className="font-black text-lg text-[#FF7A7A]">
-                              {stats.averages.avgFeedsPerDay}
-                            </Typography>
-                          </Card>
-                          <Card variant="outlined" className="p-3 bg-[#F5F3FC] rounded-2xl border-[#E5E0FA]">
-                            <Typography variant="caption" className="text-[11px] font-bold text-[#71788E] block">
-                              Avg Sleep / Day
-                            </Typography>
-                            <Typography variant="h5" className="font-black text-lg text-[#8C7AE6]">
-                              {stats.averages.avgSleepHoursPerDay}h
-                            </Typography>
-                          </Card>
-                          <Card variant="outlined" className="p-3 bg-[#EFFBF5] rounded-2xl border-[#BCEAD5]">
-                            <Typography variant="caption" className="text-[11px] font-bold text-[#71788E] block">
-                              Avg Bottle / Day
-                            </Typography>
-                            <Typography variant="h5" className="font-black text-lg text-[#48C78E]">
-                              {stats.averages.avgBottleMlPerDay} ml
-                            </Typography>
-                          </Card>
-                          <Card variant="outlined" className="p-3 bg-[#F0F9FF] rounded-2xl border-[#BAE6FD]">
-                            <Typography variant="caption" className="text-[11px] font-bold text-[#71788E] block">
-                              Longest Sleep
-                            </Typography>
-                            <Typography variant="h5" className="font-black text-lg text-[#3897F0]">
-                              {Math.round((stats.averages.longestSleepMinutes / 60) * 10) / 10}h
-                            </Typography>
-                          </Card>
-                        </div>
-
-                        <List className="space-y-2">
-                          {stats.daily.map((d) => (
-                            <ListItem
-                              key={d.date}
-                              className="p-2.5 rounded-xl bg-[#FBF7F2] border border-[#F0EBE6] flex items-center justify-between"
-                            >
-                              <Typography variant="body2" className="font-bold text-xs text-[#2D3142]">
-                                {d.date}
-                              </Typography>
-                              <Flex gap={3} align="center">
-                                <Badge variant="warning" size="sm" pill>
-                                  🍼 {d.feedsCount} ({d.bottleMl}ml)
-                                </Badge>
-                                <Badge variant="primary" size="sm" pill>
-                                  😴 {d.sleepHours}h
-                                </Badge>
-                                <Badge variant="info" size="sm" pill>
-                                  🧷 {d.diapersTotal}
-                                </Badge>
-                              </Flex>
-                            </ListItem>
-                          ))}
-                        </List>
-                      </>
-                    )}
-                  </Card>
-
-                  <Card variant="elevated" className="p-6 bg-white rounded-3xl border border-[#F0EBE6]">
-                    <Flex justify="between" align="center" className="mb-4">
-                      <div>
-                        <Typography variant="h5" className="font-extrabold text-lg text-[#2D3142]">
-                          🕒 Recent Routine Timeline
-                        </Typography>
-                        <Typography variant="caption" className="text-xs text-[#71788E]">
-                          Synced with mobile app • Click trash icon to delete
-                        </Typography>
-                      </div>
-                      <Badge variant="info" pill size="sm">
-                        {entries.length} entries
-                      </Badge>
-                    </Flex>
-
-                    {entries.length === 0 ? (
-                      <Typography variant="body2" className="text-sm text-[#71788E] py-8 text-center">
-                        No entries logged yet today. Use the 1-Tap Logger above!
-                      </Typography>
-                    ) : (
-                      <List className="space-y-2.5 max-h-[380px] overflow-y-auto pr-1">
-                        {entries.map((entry) => (
-                          <ListItem
-                            key={entry.id}
-                            className="p-3 rounded-2xl bg-[#FFFDFB] border border-[#F0EBE6] flex items-center justify-between"
-                          >
-                            <div>
-                              <Flex align="center" gap={2}>
-                                <Typography variant="subtitle2" className="font-bold text-xs text-[#2D3142]">
-                                  {ENTRY_TYPE_LABELS[entry.type] || entry.type}
-                                </Typography>
-                                <Typography variant="caption" className="text-[11px] text-[#71788E]">
-                                  {formatEntryTime(entry.startedAt)}
-                                </Typography>
-                              </Flex>
-                              <Typography variant="body2" className="text-xs text-[#4A5568] mt-0.5">
-                                {formatEntrySubtitle(entry)}
-                              </Typography>
+                  {entries.length === 0 ? (
+                    <Typography variant="body2" className="text-xs text-[#71788E] py-6 text-center">
+                      No logs yet today. Use the buttons above to log feeding, sleep, or diaper changes!
+                    </Typography>
+                  ) : (
+                    <List className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                      {entries.map((entry) => (
+                        <ListItem
+                          key={entry.id}
+                          className="p-2.5 rounded-2xl bg-[#FBF7F2] border border-[#F0EBE6] flex items-center justify-between"
+                        >
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-xs text-[#2D3142]">
+                                {ENTRY_TYPE_LABELS[entry.type] || entry.type}
+                              </span>
+                              <span className="text-[11px] text-[#71788E]">
+                                • {formatEntryTime(entry.startedAt)}
+                              </span>
                             </div>
+                            <Typography variant="caption" className="text-[11px] text-[#4A5568] block mt-0.5">
+                              {formatEntrySubtitle(entry)}
+                            </Typography>
+                          </div>
 
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              disabled={loading}
-                              onClick={() => void handleDeleteEntry(entry.id)}
-                              className="text-[#FF7A7A] hover:bg-[#FFF0F0]"
-                            >
-                              🗑 Delete
-                            </Button>
-                          </ListItem>
-                        ))}
-                      </List>
-                    )}
-                  </Card>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            disabled={loading}
+                            onClick={() => void handleDeleteEntry(entry.id)}
+                            className="text-[#FF7A7A] hover:bg-[#FFF0F0] text-xs px-2"
+                          >
+                            ✕
+                          </Button>
+                        </ListItem>
+                      ))}
+                    </List>
+                  )}
                 </div>
-              </>
+
+                {stats && (
+                  <div className="p-4 bg-white rounded-3xl border border-[#F0EBE6] shadow-xs">
+                    <Typography variant="caption" className="font-extrabold text-[11px] uppercase tracking-wider text-[#71788E] block mb-3 text-center">
+                      7-Day Averages
+                    </Typography>
+                    <div className="grid grid-cols-2 gap-2 text-center">
+                      <div className="p-2.5 rounded-2xl bg-[#FFF8F0] border border-[#FFE8CC]">
+                        <span className="text-[11px] text-[#71788E] block">Daily Feeds</span>
+                        <span className="text-lg font-black text-[#FF7A7A]">{stats.averages.avgFeedsPerDay}</span>
+                      </div>
+                      <div className="p-2.5 rounded-2xl bg-[#F5F3FC] border border-[#E5E0FA]">
+                        <span className="text-[11px] text-[#71788E] block">Sleep / Day</span>
+                        <span className="text-lg font-black text-[#8C7AE6]">{stats.averages.avgSleepHoursPerDay}h</span>
+                      </div>
+                      <div className="p-2.5 rounded-2xl bg-[#EFFBF5] border border-[#BCEAD5]">
+                        <span className="text-[11px] text-[#71788E] block">Bottle / Day</span>
+                        <span className="text-lg font-black text-[#48C78E]">{stats.averages.avgBottleMlPerDay}ml</span>
+                      </div>
+                      <div className="p-2.5 rounded-2xl bg-[#F0F9FF] border border-[#BAE6FD]">
+                        <span className="text-[11px] text-[#71788E] block">Longest Sleep</span>
+                        <span className="text-lg font-black text-[#3897F0]">
+                          {Math.round((stats.averages.longestSleepMinutes / 60) * 10) / 10}h
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}
 
-        <div className="pt-4">
+        <div className="pt-6">
           <div className="text-center mb-8">
-            <Badge variant="primary" pill size="md" className="mb-2">
-              ✨ BabyDaily Premium Pricing
+            <Badge variant="primary" pill size="md" className="mb-2 font-bold">
+              ✨ Premium Subscription
             </Badge>
-            <Typography variant="h2" className="text-2xl sm:text-4xl font-black text-[#2D3142]">
-              Simple, Family-Friendly Plans
+            <Typography variant="h2" className="text-2xl sm:text-3xl font-black text-[#2D3142]">
+              Simple, Family-Friendly Pricing
             </Typography>
-            <Typography variant="body2" className="text-sm text-[#71788E] max-w-xl mx-auto mt-2">
-              50%–65% more affordable than Huckleberry ($14.99/mo) & Napper ($14.99/mo). One subscription unlocks Premium for your entire family across Mobile & Web.
+            <Typography variant="body2" className="text-xs sm:text-sm text-[#71788E] max-w-lg mx-auto mt-1">
+              One subscription unlocks unlimited AI and 7-day reports for your entire family across iOS, Android, and Web.
             </Typography>
           </div>
 
@@ -1041,14 +1050,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                 <Card
                   key={plan.id}
                   variant="elevated"
-                  className={`p-6 sm:p-7 rounded-3xl border flex flex-col justify-between ${
+                  className={`p-6 rounded-3xl border flex flex-col justify-between ${
                     plan.id === 'YEARLY'
-                      ? 'bg-[#FFFDFB] border-2 border-[#FF7A7A] shadow-xl'
+                      ? 'bg-[#FFFDFB] border-2 border-[#FF7A7A] shadow-md'
                       : 'bg-white border-[#F0EBE6]'
                   }`}
                 >
                   <div>
-                    <Flex justify="between" align="center" className="mb-3">
+                    <Flex justify="between" align="center" className="mb-2">
                       <Badge
                         variant={plan.id === 'YEARLY' ? 'primary' : 'info'}
                         pill
@@ -1064,12 +1073,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                       )}
                     </Flex>
 
-                    <Typography variant="h4" className="font-extrabold text-xl text-[#2D3142]">
+                    <Typography variant="h4" className="font-extrabold text-lg text-[#2D3142]">
                       {plan.title}
                     </Typography>
 
-                    <Flex align="baseline" gap={1} className="my-3">
-                      <Typography variant="h2" className="text-3xl font-black text-[#2D3142]">
+                    <Flex align="baseline" gap={1} className="my-2">
+                      <Typography variant="h2" className="text-2xl font-black text-[#2D3142]">
                         {plan.price}
                       </Typography>
                       <Typography variant="caption" className="text-xs font-bold text-[#71788E]">
@@ -1077,22 +1086,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                       </Typography>
                     </Flex>
 
-                    <Typography variant="body2" className="text-xs text-[#71788E] leading-relaxed mb-5">
+                    <Typography variant="body2" className="text-xs text-[#71788E] leading-relaxed mb-4">
                       {plan.description}
                     </Typography>
 
-                    <List className="space-y-2 mb-6">
+                    <List className="space-y-1.5 mb-6">
                       <ListItem className="flex items-center gap-2 text-xs font-semibold text-[#2D3142]">
                         <CheckCircleIcon size={14} className="text-[#48C78E] shrink-0" />
-                        <span>Unlimited DeepSeek AI Q&A & Live Advice</span>
+                        <span>Unlimited DeepSeek AI Q&A</span>
                       </ListItem>
                       <ListItem className="flex items-center gap-2 text-xs font-semibold text-[#2D3142]">
                         <CheckCircleIcon size={14} className="text-[#48C78E] shrink-0" />
-                        <span>Automated Daily AI Email & Push Digest</span>
+                        <span>Automated Daily AI Email Digest</span>
                       </ListItem>
                       <ListItem className="flex items-center gap-2 text-xs font-semibold text-[#2D3142]">
                         <CheckCircleIcon size={14} className="text-[#48C78E] shrink-0" />
-                        <span>7-Day & 14-Day Sleep, Feed & Diaper Trends</span>
+                        <span>7-Day & 14-Day Sleep & Feeding Trends</span>
                       </ListItem>
                     </List>
                   </div>
@@ -1125,15 +1134,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
               );
             })}
           </div>
-
-          <Card variant="outlined" className="mt-6 p-4 bg-[#FBF7F2] rounded-2xl border-[#E8E2D9]">
-            <Flex align="center" justify="center" gap={2}>
-              <InfoIcon size={16} className="text-[#71788E]" />
-              <Typography variant="caption" className="text-xs text-[#71788E] font-medium">
-                Free Tier always includes unlimited feeding, sleep & diaper logging, family sharing, and 3 AI questions per day.
-              </Typography>
-            </Flex>
-          </Card>
         </div>
       </div>
     </div>

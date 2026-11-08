@@ -1,4 +1,4 @@
-import { useState, type FC } from 'react';
+import { useState, useEffect, type FC } from 'react';
 import { Link } from 'react-router-dom';
 import { Typography, Badge } from '@forgedevstack/bear';
 import { useLingo } from '@forgedevstack/lingo';
@@ -11,10 +11,10 @@ import {
   ROUTE_PRIVACY,
   ROUTE_DASHBOARD,
 } from '@constants/routes.const';
-import { Sparkles, Globe, ExternalLink, ChevronDown } from 'lucide-react';
+import { Globe, ChevronDown } from 'lucide-react';
 
 interface NavbarProps {
-  onOpenChat: () => void;
+  onOpenChat?: () => void;
 }
 
 const LANGUAGE_LABELS: Record<string, string> = {
@@ -24,9 +24,19 @@ const LANGUAGE_LABELS: Record<string, string> = {
   es: 'Español',
 };
 
-export const Navbar: FC<NavbarProps> = ({ onOpenChat }) => {
+export const Navbar: FC<NavbarProps> = () => {
   const { t, locale, setLocale } = useLingo();
   const [langOpen, setLangOpen] = useState(false);
+  const [hasToken, setHasToken] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('baby_daily_token');
+      setHasToken(Boolean(saved));
+    } catch {
+      setHasToken(false);
+    }
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 backdrop-blur-md bg-white/95 border-b border-[#F0EBE6] shadow-2xs">
@@ -52,18 +62,6 @@ export const Navbar: FC<NavbarProps> = ({ onOpenChat }) => {
               </Typography>
             </div>
           </Link>
-
-          <a
-            href="https://forgedevstack.com"
-            target="_blank"
-            rel="noopener noreferrer"
-            title="Part of ForgeDevStack Ecosystem"
-            className="hidden xl:inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-orange-50/80 border border-orange-200/60 text-xs font-bold text-orange-700 hover:bg-orange-100 transition-colors shadow-2xs shrink-0 whitespace-nowrap"
-          >
-            <span className="w-2 h-2 rounded-full bg-orange-500 animate-pulse" />
-            <span>ForgeDevStack</span>
-            <ExternalLink className="w-3.5 h-3.5 text-orange-500 opacity-70" />
-          </a>
         </div>
 
         <nav className="flex items-center gap-2 sm:gap-3 shrink-0">
@@ -132,18 +130,10 @@ export const Navbar: FC<NavbarProps> = ({ onOpenChat }) => {
 
           <Link
             to={ROUTE_DASHBOARD}
-            className="whitespace-nowrap shrink-0 flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#F5F3FC] hover:bg-[#EAE4FA] text-[#8C7AE6] font-extrabold text-xs sm:text-sm transition-colors shadow-2xs"
+            className="whitespace-nowrap shrink-0 flex items-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-xl bg-[#FF7A7A] hover:bg-[#E86262] text-white font-bold text-xs sm:text-sm transition-colors shadow-2xs"
           >
-            <span>👶 Web App</span>
+            <span>{hasToken ? 'Open App' : 'Login'}</span>
           </Link>
-
-          <button
-            onClick={onOpenChat}
-            className="whitespace-nowrap shrink-0 flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-xl bg-[#FFF0F0] hover:bg-[#FFE0E0] text-[#FF7A7A] font-semibold text-xs sm:text-sm transition-colors shadow-2xs"
-          >
-            <Sparkles className="w-4 h-4 text-[#FF7A7A]" />
-            <span className="hidden md:inline">{t('nav.askAi')}</span>
-          </button>
 
           <a
             href={URL_GOOGLE_PLAY}
