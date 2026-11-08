@@ -11,6 +11,7 @@ import {
   URL_GOOGLE_PLAY,
   URL_INTERNAL_TEST,
   URL_PLAY_TESTING,
+  URL_DIRECT_APK,
   URL_SUPPORT_EMAIL,
 } from '@constants/routes.const';
 import { ExternalLink } from 'lucide-react';
@@ -33,22 +34,28 @@ export const Footer: FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-5 text-sm font-medium text-[#71788E]">
+        <div className="flex flex-wrap items-center justify-center gap-4 text-sm font-medium text-[#71788E]">
+          <a
+            href={URL_DIRECT_APK}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#48C78E] text-white hover:bg-[#3bb07b] text-xs font-bold transition-colors shadow-2xs"
+          >
+            <span>⚡ Direct APK (v0.1.7+8)</span>
+          </a>
           <a
             href={URL_PLAY_TESTING}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2D3142] text-white hover:bg-[#1E202B] text-xs font-bold transition-colors shadow-2xs"
           >
-            <span>🤖 Install via Android (Play Store)</span>
+            <span>🤖 Google Play Tester</span>
           </a>
           <a
             href={URL_GOOGLE_PLAY}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-[#2D3142] transition-colors"
+            className="hover:text-[#2D3142] transition-colors text-xs font-semibold"
           >
-            Google Play
+            Play Store
           </a>
           <a
             href={URL_INTERNAL_TEST}
