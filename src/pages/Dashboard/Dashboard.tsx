@@ -124,10 +124,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
     setStatusMsg(null);
     try {
       const endpoint = authMode === 'login' ? '/auth/login' : '/auth/register';
+      const cleanIdentifier = email.trim();
       const payload =
         authMode === 'login'
-          ? { email, password, utcOffset: -new Date().getTimezoneOffset() }
-          : { email, password, name: name || 'Parent', utcOffset: -new Date().getTimezoneOffset() };
+          ? {
+              identifier: cleanIdentifier,
+              password,
+              utcOffset: -new Date().getTimezoneOffset(),
+            }
+          : {
+              email: cleanIdentifier,
+              password,
+              name: name || 'Parent',
+              utcOffset: -new Date().getTimezoneOffset(),
+            };
 
       const res = await apiRequest<{ token: string; user: PortalUser }>(endpoint, null, {
         method: 'POST',
@@ -144,6 +154,52 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleGoogleAccountPicker = () => {
+    const google = (window as unknown as { google?: any }).google;
+    if (google?.accounts?.oauth2) {
+      try {
+        const client = google.accounts.oauth2.initTokenClient({
+          client_id: '465653534147-2j97qb01btip30m5kqo02jglsgfuir98.apps.googleusercontent.com',
+          scope: 'email profile openid',
+          prompt: 'select_account',
+          callback: async (resp: { access_token?: string }) => {
+            if (resp?.access_token) {
+              setLoading(true);
+              setErrorMsg(null);
+              setStatusMsg(null);
+              try {
+                const res = await apiRequest<{ token: string; user: PortalUser }>('/auth/google', null, {
+                  method: 'POST',
+                  body: JSON.stringify({
+                    accessToken: resp.access_token,
+                    locale: 'en',
+                    utcOffset: -new Date().getTimezoneOffset(),
+                  }),
+                });
+                savePortalToken(res.token);
+                setToken(res.token);
+                setUser(res.user);
+                setShowGooglePrompt(false);
+                setInitialized(true);
+                await loadFullSession(res.token);
+              } catch (err) {
+                setErrorMsg((err as Error).message);
+              } finally {
+                setLoading(false);
+              }
+            }
+          },
+        });
+        client.requestAccessToken({ prompt: 'select_account' });
+        return;
+      } catch (err) {
+        console.warn('Google GSI error', err);
+      }
+    }
+    // Fallback if third-party script is blocked or still loading
+    setShowGooglePrompt(true);
   };
 
   const handleGoogleAuthSubmit = async (e?: React.FormEvent) => {
@@ -413,13 +469,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
 
                 <div>
                   <Typography variant="caption" className="font-bold text-[#2D3142] block mb-1">
-                    Email Address
+                    {authMode === 'login' ? 'Email or Phone Number' : 'Email Address'}
                   </Typography>
                   <Input
-                    type="email"
+                    type="text"
                     value={email}
                     onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEmail(e.target.value)}
-                    placeholder="you@example.com"
+                    placeholder={authMode === 'login' ? 'you@example.com or phone number' : 'you@example.com'}
                     required
                     fullWidth
                   />
@@ -471,7 +527,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                   size="lg"
                   fullWidth
                   disabled={loading}
-                  onClick={() => setShowGooglePrompt(true)}
+                  onClick={handleGoogleAccountPicker}
                   className="border-[#D1D5DB] text-[#1F2937] hover:bg-[#F9FAFB] font-bold rounded-2xl py-3 flex items-center justify-center gap-3 shadow-2xs"
                 >
                   <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
