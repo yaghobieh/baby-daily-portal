@@ -5,6 +5,7 @@ import { useLingo } from '@forgedevstack/lingo';
 import { APP_NAME, BADGE_LIVE_NOW } from '@constants/strings.const';
 import {
   URL_GOOGLE_PLAY,
+  URL_INTERNAL_TEST,
   ROUTE_HOME,
   ROUTE_DOCS,
   ROUTE_CHANGELOG,
@@ -136,7 +137,7 @@ export const Navbar: FC<NavbarProps> = () => {
           </Link>
 
           <a
-            href={URL_GOOGLE_PLAY}
+            href={URL_INTERNAL_TEST}
             target="_blank"
             rel="noopener noreferrer"
             className="whitespace-nowrap shrink-0 px-3.5 sm:px-4 py-2 rounded-xl bg-[#2D3142] hover:bg-[#1C1F2B] text-white text-xs sm:text-sm font-semibold transition-colors shadow-sm"

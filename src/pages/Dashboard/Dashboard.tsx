@@ -629,9 +629,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                 <span className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] text-[11px] font-bold text-[#1E293B] flex items-center gap-1">
                   <Apple className="w-3 h-3 text-[#1E293B]" /> iOS App
                 </span>
-                <span className="px-2 py-0.5 rounded-md bg-white border border-[#E2E8F0] text-[11px] font-bold text-[#1E293B] flex items-center gap-1">
-                  <Smartphone className="w-3 h-3 text-[#34A853]" /> Android App
-                </span>
+                <a
+                  href="https://play.google.com/apps/internaltest/4701450095669878477"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="px-2.5 py-1 rounded-lg bg-[#2D3142] hover:bg-[#1E202B] text-white text-[11px] font-bold flex items-center gap-1.5 transition-colors shadow-2xs"
+                >
+                  <Smartphone className="w-3 h-3 text-[#34A853]" />
+                  <span>Install on Android</span>
+                </a>
                 <span className="px-2 py-0.5 rounded-md bg-[#EFFBF5] text-[#1E824C] border border-[#BCEAD5] text-[11px] font-bold">
                   ✓ Instant Fanout
                 </span>
