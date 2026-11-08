@@ -9,6 +9,7 @@ import {
   ROUTE_DOCS,
   ROUTE_CHANGELOG,
   ROUTE_PRIVACY,
+  ROUTE_DASHBOARD,
 } from '@constants/routes.const';
 import { Sparkles, Globe, ExternalLink, ChevronDown } from 'lucide-react';
 
@@ -127,6 +128,13 @@ export const Navbar: FC<NavbarProps> = ({ onOpenChat }) => {
               </div>
             )}
           </div>
+
+          <Link
+            to={ROUTE_DASHBOARD}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#F5F3FC] hover:bg-[#E9E4FA] text-[#8C7AE6] font-extrabold text-sm transition-colors shadow-2xs"
+          >
+            <span>👶 Web App / Login</span>
+          </Link>
 
           <button
             onClick={onOpenChat}

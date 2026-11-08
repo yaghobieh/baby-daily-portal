@@ -9,12 +9,14 @@ import { Privacy } from '@pages/Privacy';
 import { Terms } from '@pages/Terms';
 import { Docs } from '@pages/Docs';
 import { Changelog } from '@pages/Changelog';
+import { Dashboard } from '@pages/Dashboard';
 import {
   ROUTE_HOME,
   ROUTE_PRIVACY,
   ROUTE_TERMS,
   ROUTE_DOCS,
   ROUTE_CHANGELOG,
+  ROUTE_DASHBOARD,
 } from '@constants/routes.const';
 import { chatNucleus } from '@store/modules/Chat';
 
@@ -36,6 +38,7 @@ export const App: FC = () => {
             <Route path={ROUTE_TERMS} element={<Terms />} />
             <Route path={ROUTE_DOCS} element={<Docs />} />
             <Route path={ROUTE_CHANGELOG} element={<Changelog />} />
+            <Route path={ROUTE_DASHBOARD} element={<Dashboard onOpenChat={handleOpenChat} />} />
             <Route path="*" element={<Navigate to={ROUTE_HOME} replace />} />
           </Routes>
         </main>
