@@ -10,6 +10,7 @@ import {
   ROUTE_CHANGELOG,
   URL_GOOGLE_PLAY,
   URL_INTERNAL_TEST,
+  URL_PLAY_TESTING,
   URL_SUPPORT_EMAIL,
 } from '@constants/routes.const';
 import { ExternalLink } from 'lucide-react';
@@ -32,17 +33,30 @@ export const Footer: FC = () => {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-6 text-sm font-medium text-[#71788E]">
+        <div className="flex flex-wrap items-center justify-center gap-5 text-sm font-medium text-[#71788E]">
           <a
-            href={URL_INTERNAL_TEST}
+            href={URL_PLAY_TESTING}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#2D3142] text-white hover:bg-[#1E202B] text-xs font-bold transition-colors shadow-2xs"
           >
             <span>🤖 Install via Android (Play Store)</span>
           </a>
-          <a href={URL_GOOGLE_PLAY} target="_blank" rel="noopener noreferrer" className="hover:text-[#2D3142] transition-colors">
+          <a
+            href={URL_GOOGLE_PLAY}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[#2D3142] transition-colors"
+          >
             Google Play
+          </a>
+          <a
+            href={URL_INTERNAL_TEST}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-[#2D3142] transition-colors text-xs"
+          >
+            Internal Testing
           </a>
           <Link to={ROUTE_DOCS} className="hover:text-[#2D3142] transition-colors">
             {t('nav.docs')}
