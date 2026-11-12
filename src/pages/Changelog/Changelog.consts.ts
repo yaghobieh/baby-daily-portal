@@ -1,17 +1,95 @@
 import type { ReleaseItem } from './Changelog.types';
 
-export const CHANGELOG_TITLE = 'Release Changelog';
+export const CHANGELOG_TITLE = 'Release Changelog & v1.2.0 Roadmap';
 export const CHANGELOG_SUBTITLE =
-  'Track every release, feature update, performance boost, and bug fix across BabyDaily.';
+  'Track every release, feature update, performance boost, and upcoming roadmap milestone across BabyDaily.';
 
 export const RELEASES: ReleaseItem[] = [
+  {
+    version: '1.2.0',
+    build: 9,
+    date: 'November 2026',
+    badge: 'Latest Release',
+    tag: 'v1.2.0 All-In-One Suite',
+    isLatest: true,
+    highlights: [
+      'Pumping & Breast Milk Stash Manager: Dual-side timer + Fridge/Freezer inventory with expiration alerts.',
+      '100 First Foods & Top 9 Allergen Tracker (Solid Starts style) with reaction & preference badges.',
+      'Tummy Time Goal Ring, Activity Stopwatch & CDC/WHO Developmental Milestones + Mental Leaps.',
+      'Interactive WHO Growth Percentile Curves (3rd–97th) & Pediatrician Visit PDF Pack.',
+      'Hands-Free AI Voice & Natural Language Logging ("Liam drank 150ml formula 20m ago").',
+      'Built-in Soothing White Noise & Sleep Sound Machine with auto-fade timer.',
+      'Lock-Screen Live Timer Notifications, Home Screen Widgets & 3 AM Red-Light Night Shift Mode.',
+    ],
+    categories: [
+      {
+        category: 'Feeding, Pumping & Solids (Inspired by Cubtale & Solid Starts)',
+        items: [
+          'Dual Left/Right breast pumping stopwatch and volume tracker (leftMl, rightMl, totalMl).',
+          'Fridge (4-day) & Freezer (6-month) Milk Stash inventory with FIFO bottle deduction.',
+          'Interactive "100 First Foods Before Age 1" checklist & Top 9 Allergen multi-exposure tracker.',
+          'Food reaction severity logging (none, mild rash, hives, tummy upset) and preference tags (loved, neutral, disliked).',
+        ],
+      },
+      {
+        category: 'Sleep, Soothing & AI Automation (Inspired by Huckleberry & Robin)',
+        items: [
+          'Hands-free voice & natural language entry parsing powered by DeepSeek AI.',
+          'Built-in background White Noise, Rain, Womb Heartbeat, and Shusher audio player.',
+          'Auto-adjusting multi-nap daily schedule builder that recalculates when a nap runs short.',
+          'Caregiver Shift Handoff summary card for seamless partner and nanny transitions.',
+        ],
+      },
+      {
+        category: 'Milestones, WHO Curves & Native Experience (Inspired by Nara & Glow)',
+        items: [
+          'Tummy Time daily goal ring + Bath, Walk, Skin-to-Skin, and Story Time stopwatches.',
+          'Month-by-month CDC/WHO developmental milestone checklist & mental leap alerts with photo memories.',
+          'Interactive WHO Growth Percentile curves for weight, height, and head circumference.',
+          'Lock-screen ongoing timer controls, Home Screen widgets, and 3 AM red/amber night-vision mode.',
+        ],
+      },
+    ],
+  },
+  {
+    version: '0.1.7',
+    build: 8,
+    date: 'November 2026',
+    badge: 'Latest Release',
+    tag: 'AI & Web Dashboard Sync',
+    isLatest: true,
+    highlights: [
+      'DeepSeek AI Pediatric Routine Advisor & Sweet-Spot Wake Window predictor.',
+      'Interactive Web App & Family Dashboard with instant Neon PostgreSQL synchronization.',
+      '7-Day pediatric routine averages, automated daily email digests, and Lifetime VIP tier.',
+      '1-Click Gmail & Phone/Email login across Web and Mobile.',
+    ],
+    categories: [
+      {
+        category: 'AI & Smart Insights',
+        items: [
+          'Age-calibrated Sweet-Spot wake window calculator preventing overtired meltdowns.',
+          'Embedded DeepSeek AI chat grounded in your baby’s real-time 24h feeding, sleep, and diaper logs.',
+          '1-click Daily AI Routine Digest delivered via email and in-app notification.',
+        ],
+      },
+      {
+        category: 'Web App & Multi-Device Sync',
+        items: [
+          'Full Web Dashboard (/dashboard) with 1-tap Feeding, Sleep, Diaper, and Notes logging.',
+          '7-Day trend analytics for daily feeds, sleep hours, bottle volume, and longest sleep stretch.',
+          'Direct APK release distribution and Google Account / Phone number authentication.',
+        ],
+      },
+    ],
+  },
   {
     version: '0.1.5',
     build: 6,
     date: 'November 2026',
-    badge: 'Latest Release',
+    badge: 'Stable Release',
     tag: 'Production / Closed Testing',
-    isLatest: true,
+    isLatest: false,
     highlights: [
       'Interactive Today Timeline with swipe-to-delete and swipe-to-pin gestures.',
       'Native Android AlarmClock channel: meal & sleep alerts fire even when silenced or killed.',

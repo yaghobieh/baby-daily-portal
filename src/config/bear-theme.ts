@@ -12,6 +12,7 @@ export const BABY_CORAL = {
   800: '#A33333',
   900: '#7A2222',
   950: '#4D1212',
+  
 } as const;
 
 export const BABY_NEUTRAL = {

@@ -54,7 +54,18 @@ export const formatEntrySubtitle = (entry: PortalEntry): string => {
   const d = entry.data ?? {};
   switch (entry.type) {
     case 'FEED': {
-      const kind = typeof d.kind === 'string' ? d.kind : 'bottle';
+      const kind = typeof d.method === 'string' ? d.method : typeof d.kind === 'string' ? d.kind : 'bottle';
+      if (kind === 'pump') {
+        const total = typeof d.amountMl === 'number' ? `${d.amountMl} ml` : '';
+        const loc = typeof d.storageLocation === 'string' ? `stored in ${d.storageLocation}` : '';
+        return ['Pumped milk', total, loc].filter(Boolean).join(' • ');
+      }
+      if (kind === 'solids') {
+        const food = typeof d.food === 'string' ? d.food : 'Solids';
+        const pref = typeof d.preference === 'string' ? d.preference : '';
+        const tex = typeof d.texture === 'string' ? d.texture.replace('_', ' ') : '';
+        return [`Solids: ${food}`, tex, pref].filter(Boolean).join(' • ');
+      }
       const ml = typeof d.amountMl === 'number' ? `${d.amountMl} ml` : '';
       const min = typeof d.durationMin === 'number' ? `${d.durationMin} min` : '';
       return [kind, ml, min].filter(Boolean).join(' • ');
@@ -70,7 +81,24 @@ export const formatEntrySubtitle = (entry: PortalEntry): string => {
     case 'DIAPER': {
       return typeof d.kind === 'string' ? `Diaper: ${d.kind}` : 'Diaper change';
     }
+    case 'GROWTH': {
+      const w = typeof d.weightKg === 'number' ? `${d.weightKg} kg` : '';
+      const h = typeof d.heightCm === 'number' ? `${d.heightCm} cm` : '';
+      const hc = typeof d.headCm === 'number' ? `Head ${d.headCm} cm` : '';
+      return [w, h, hc].filter(Boolean).join(' • ') || 'Growth checkup';
+    }
+    case 'MEDICINE': {
+      const name = typeof d.name === 'string' ? d.name : 'Medicine';
+      return d.isVaccine ? `💉 Vaccine: ${name}` : `💊 ${name}`;
+    }
     case 'NOTE': {
+      if (d.subType === 'milestone' && typeof d.milestoneTitle === 'string') {
+        return `🌟 Milestone: ${d.milestoneTitle}`;
+      }
+      if (d.subType === 'activity' && typeof d.activityKind === 'string') {
+        const dur = typeof d.durationMinutes === 'number' ? `${d.durationMinutes}m` : '';
+        return `🏆 Activity: ${d.activityKind.replace('_', ' ')} ${dur}`.trim();
+      }
       return typeof d.text === 'string' ? d.text : 'Routine note';
     }
     default:

@@ -46,6 +46,7 @@ import {
   ChevronRight,
   Zap,
 } from 'lucide-react';
+import { V120SuitePanel } from './V120SuitePanel';
 
 interface DashboardProps {
   onOpenChat?: () => void;
@@ -71,6 +72,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
   const [noteText, setNoteText] = useState('');
   const [activeTab, setActiveTab] = useState<'feed' | 'diaper' | 'note' | null>(null);
   const [viewMode, setViewMode] = useState<'app' | 'expanded'>('app');
+  const [nightShiftMode, setNightShiftMode] = useState(false);
 
   const [user, setUser] = useState<PortalUser | null>(null);
   const [babies, setBabies] = useState<PortalBaby[]>([]);
@@ -1104,6 +1106,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                     </div>
                   )}
                 </div>
+
+                {/* v1.2.0 All-In-One Parenting Suite (AL-116 through AL-122) */}
+                <V120SuitePanel
+                  token={token}
+                  babyId={selectedBabyId}
+                  babyName={activeBaby?.name || 'Liam'}
+                  nightShiftMode={nightShiftMode}
+                  onToggleNightShift={() => setNightShiftMode((prev) => !prev)}
+                  onRefreshDashboard={() => loadBabyDetails(token, selectedBabyId)}
+                />
 
                 {/* DeepSeek AI Routine Advisor Panel Embedded */}
                 <Card variant="elevated" className="p-5 sm:p-6 bg-gradient-to-br from-[#FFF5F5] via-[#FAF5FF] to-[#F5F3FC] rounded-3xl border-2 border-[#E9E4FA] shadow-sm">
