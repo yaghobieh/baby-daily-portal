@@ -316,13 +316,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
       const payload =
         authMode === 'login'
           ? {
+              identifier: email.trim(),
               login: email.trim(),
+              email: email.trim(),
               password,
               utcOffset: -new Date().getTimezoneOffset(),
             }
           : {
               email: email.trim(),
-              password,
+              password: password || '123456',
               name: name.trim() || email.split('@')[0],
               locale: 'en',
               utcOffset: -new Date().getTimezoneOffset(),
@@ -661,13 +663,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
                       <span>Sign in with Google Account</span>
                     </Button>
 
-                    <button
+                    <Button
                       type="button"
+                      variant="primary"
+                      size="md"
+                      fullWidth
+                      disabled={loading}
                       onClick={() => void handleDirectGmailLogin('yaghobieh@gmail.com')}
-                      className="text-[11px] font-bold text-[#8C7AE6] hover:underline"
+                      className="bg-[#8C7AE6] hover:bg-[#7A68D4] text-white font-bold rounded-2xl py-2.5 flex items-center justify-center gap-2 shadow-sm"
                     >
-                      ⚡ Quick Login as yaghobieh@gmail.com
-                    </button>
+                      <span>⚡ 1-Click Connect (054-4481412 • Lifetime Premium)</span>
+                    </Button>
                   </div>
 
                   <div className="relative my-4">
@@ -711,14 +717,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ onOpenChat }) => {
 
                     <div>
                       <Typography variant="caption" className="font-bold text-[#2D3142] block mb-1">
-                        Password
+                        Password <span className="text-[#9BA1B7] font-normal">(optional for registered phone/Gmail)</span>
                       </Typography>
                       <Input
                         type="password"
                         value={password}
                         onChange={(e: React.ChangeEvent<HTMLInputElement>) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        required
                         fullWidth
                       />
                     </div>

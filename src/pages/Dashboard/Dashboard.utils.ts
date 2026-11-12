@@ -33,10 +33,29 @@ export const apiRequest = async <T>(
     ...(token ? { Authorization: `Bearer ${token}` } : {}),
   };
 
-  const res = await fetch(`${URL_API_BACKEND}${path}`, {
-    ...options,
-    headers,
-  });
+  const isLocalHost =
+    typeof window !== 'undefined' &&
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+
+  let res: Response;
+  if (isLocalHost) {
+    try {
+      res = await fetch(`http://localhost:5050${path}`, {
+        ...options,
+        headers,
+      });
+    } catch {
+      res = await fetch(`${URL_API_BACKEND}${path}`, {
+        ...options,
+        headers,
+      });
+    }
+  } else {
+    res = await fetch(`${URL_API_BACKEND}${path}`, {
+      ...options,
+      headers,
+    });
+  }
 
   if (res.status === 204) {
     return undefined as unknown as T;
